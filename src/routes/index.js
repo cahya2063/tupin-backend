@@ -6,7 +6,7 @@ import { postLogin } from '../controllers/login.js';
 const routes = express.Router();
 
 routes.post('/signup', postSignup);
-routes.post('/login', postLogin)
+routes.post('/signin', postLogin)
 
 routes.get('/', (req, res) => {
   res.json({
