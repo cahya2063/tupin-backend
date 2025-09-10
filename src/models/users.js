@@ -1,25 +1,37 @@
-
-import mongoos from "../utils/db.js";
+import mongoos from '../utils/db.js';
 
 const logInSchema = new mongoos.Schema({
-    nama: {
-        type: String,
-        required: true
-    },
+  nama: {
+    type: String,
+    required: true,
+  },
 
-    email:{
-        type: String,
-        required: true,
-    },
-    password: {
-        type: String, 
-        required: true
-    }
-})
+  email: {
+    type: String,
+    required: true,
+  },
+  password: {
+    type: String,
+    required: true,
+  },
+  phone_number: {
+    type: Number,
+    required: false,
+  },
+  address: {
+    type: String,
+    required: false,
+  },
+  country: {
+    type: String,
+    required: false,
+  },
+  zip_code: {
+    type: Number,
+    required: false,
+  },
+});
 
+const userCollection = mongoos.model('User', logInSchema);
 
-const logInCollection = mongoos.model('User', logInSchema)
-
-export default logInCollection
-
-
+export default userCollection;

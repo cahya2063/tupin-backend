@@ -1,38 +1,36 @@
-import logInCollection from "../models/users.js";
-import { encrypt } from "../utils/bcrypt.js";
-import registerValidation from "../validation/register.js";
+import userCollection from '../models/users.js';
+import { encrypt } from '../utils/bcrypt.js';
+import registerValidation from '../validation/register.js';
 
 const postSignup = async (req, res) => {
+  const validasi = registerValidation(req.body);
+  if (validasi?.status === false) {
+    return res.status(400).json({
+      message: validasi.message,
+    });
+  }
 
-    
-    const validasi = registerValidation(req.body)
-    if(validasi?.status === false){
-        return res.status(400).json({
-            'message': validasi.message
-        })
-    }    
+  const isRegistered = await userCollection.findOne({
+    email: validasi.data.email,
+  });
 
-    const isRegistered = await logInCollection.findOne({
-        email: validasi.data.email
-    })
+  if (isRegistered) {
+    return res.status(400).json({
+      message: 'email sudah terdaftar',
+    });
+  }
 
-    if(isRegistered){
-        return res.status(400).json({
-            'message': 'email sudah terdaftar'
-        })
-    }
+  const newUser = {
+    nama: validasi.data.nama,
+    email: validasi.data.email,
+    password: await encrypt(String(validasi.data.password)),
+  };
 
-    const newUser = {
-        nama: validasi.data.nama,
-        email: validasi.data.email,
-        password: await encrypt (String(validasi.data.password)),
-    };
+  // untuk menyimpan ke database
+  await userCollection.insertMany([newUser]);
+  res.status(201).json({
+    message: 'registrasi berhasil',
+  });
+};
 
-    // untuk menyimpan ke database
-    await logInCollection.insertMany([newUser]);
-    res.status(201).json({
-        'message' : 'registrasi berhasil'
-    })
-}
-
-export {postSignup}
+export { postSignup };

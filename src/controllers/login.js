@@ -1,5 +1,5 @@
 import { compare } from "bcrypt"
-import logInCollection from "../models/users.js"
+import userCollection from "../models/users.js"
 import loginValidation from "../validation/login.js"
 import jwt from 'jsonwebtoken'
 import 'dotenv/config'
@@ -14,7 +14,7 @@ const postLogin = async(req, res)=>{
             })
         }
 
-        const isUserExist = await logInCollection.findOne({
+        const isUserExist = await userCollection.findOne({
             email: validasi.data.email
         })
 
