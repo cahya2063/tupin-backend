@@ -32,6 +32,6 @@ const logInSchema = new mongoos.Schema({
   },
 });
 
-const userCollection = mongoos.model('User', logInSchema);
+const userCollection = mongoos.model('users', logInSchema);
 
 export default userCollection;
