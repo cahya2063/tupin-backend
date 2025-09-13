@@ -13,7 +13,7 @@ const getProfile = async (req, res, next) => {
         if (!user) {
             return res.status(404).json({ message: 'User tidak ditemukan' })
         }
-        return res.status(200).json({ data: user })
+        return res.status(200).json({ user })
     } catch (error) {
         next(error)
     }
