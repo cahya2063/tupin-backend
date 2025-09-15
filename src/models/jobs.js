@@ -18,7 +18,7 @@ const jobsSchema = new mongoos.Schema({
         required: false
     },
     deadline: {
-        type: String,
+        type: Object,
         required: false
     },
     experiences: {
