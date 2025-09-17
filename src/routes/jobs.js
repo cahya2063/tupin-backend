@@ -1,9 +1,12 @@
 import express from 'express'
-import { addJob } from '../controllers/jobs.js'
+import { addJob, getAllJob, getDetailJob } from '../controllers/jobs.js'
+import upload from '../middleware/upload.js'
 
 const jobsRouter = express.Router()
 
-jobsRouter.post('/', addJob)
+jobsRouter.post('/', upload.single("photo"), addJob)
+jobsRouter.get('/', getAllJob)
+jobsRouter.get('/:id', getDetailJob)
 
 export default jobsRouter
 

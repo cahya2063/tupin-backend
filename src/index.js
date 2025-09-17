@@ -20,6 +20,8 @@ app.use(express.json());
 // Kalau pakai form-urlencoded juga bisa aktifkan:
 app.use(express.urlencoded({ extended: true }));
 
+app.use("/uploads", express.static("uploads"));
+
 app.use(routes)
 
 app.listen(port, ()=>{

@@ -8,7 +8,9 @@ const getAllSkills = async(req, res, next)=>{
             'skills': data
         })
     } catch (error) {
-        
+        res.status(500).json({
+            'message': 'gagal mengambil data'
+        })
     }
 }
 

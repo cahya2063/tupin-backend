@@ -49,4 +49,31 @@ const updateProfile = async (req, res, next)=>{
     
 }
 
-export {updateProfile, getProfile}
+const updateAvatar = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    if (!req.file) {
+      return res.status(400).json({ message: "Tidak ada file yang diupload" });
+    }
+
+    const avatarPath = `/uploads/profile/${req.file.filename}`;
+
+    const result = await userCollection.updateOne(
+      { _id: new ObjectId(id) },
+      { $set: { avatar: avatarPath } }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ message: "User tidak ditemukan" });
+    }
+
+    return res
+      .status(200)
+      .json({ message: "Avatar berhasil diupdate", avatar: avatarPath });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export { updateProfile, getProfile, updateAvatar };

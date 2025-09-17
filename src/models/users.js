@@ -5,7 +5,6 @@ const logInSchema = new mongoos.Schema({
     type: String,
     required: true,
   },
-
   email: {
     type: String,
     required: true,
@@ -28,6 +27,10 @@ const logInSchema = new mongoos.Schema({
   },
   zip_code: {
     type: Number,
+    required: false,
+  },
+  avatar: {
+    type: String,   // simpan path atau filename
     required: false,
   },
 });

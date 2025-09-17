@@ -40,6 +40,10 @@ const jobsSchema = new mongoos.Schema({
     invites: {
         type: Array,
         required: true
+    },
+    idCreator: {
+        type: String,
+        required: true
     }
 })
 
