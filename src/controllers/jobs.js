@@ -60,8 +60,38 @@ const addJob = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+const applyJob = async (req, res, next) => {
+  try {
+    const { jobId } = req.params;        // ambil id job dari URL
+    const { userId } = req.body;         // ambil id user dari body (atau req.user dari authMiddleware)
+    console.log('jobId:', jobId, 'userId:', userId);
+    
 
-export {addJob, getAllJob, getDetailJob}
+    if (!userId) {
+      return res.status(400).json({ message: "userId wajib dikirim" });
+    }
+
+    // update job dengan push userId ke array invites
+    const updatedJob = await jobsCollection.findByIdAndUpdate(
+      jobId,
+      { $addToSet: { invites: userId } }, // $addToSet agar tidak duplikat
+      { new: true }
+    );
+
+    if (!updatedJob) {
+      return res.status(404).json({ message: "Job tidak ditemukan" });
+    }
+
+    return res.status(201).json({
+      message: "Berhasil apply job",
+      job: updatedJob,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export {addJob, getAllJob, getDetailJob, applyJob}
 
 
 

@@ -48,7 +48,8 @@ const postLogin = async(req, res)=>{
             data: {
                 id: isUserExist._id,
                 nama: isUserExist.nama,
-                email: isUserExist.email
+                email: isUserExist.email,
+                role: isUserExist.role
             }
         })
 

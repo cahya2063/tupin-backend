@@ -33,6 +33,11 @@ const logInSchema = new mongoos.Schema({
     type: String,   // simpan path atau filename
     required: false,
   },
+  role: {
+    type: String,
+    enum: ['technician', 'client', 'admin'], // daftar role yg valid
+    default: 'client',                     // default role
+  },
 });
 
 const userCollection = mongoos.model('users', logInSchema);
