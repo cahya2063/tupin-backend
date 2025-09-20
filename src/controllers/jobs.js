@@ -32,6 +32,25 @@ const getDetailJob = async (req, res, next)=>{
   }
 }
 
+const getJobByUser = async (req, res, next)=>{
+  try {
+    const {userId} = req.params
+    const jobs = await jobsCollection.find({idCreator: userId})
+
+    if(!jobs || jobs.length === 0){
+      return res.status(404).json({
+        message: 'Client belum pernah mengupload job'
+      })
+    }
+    return res.status(200).json({
+      message: 'Berhasil mengambil data job',
+      jobs: jobs
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
 
 const addJob = async (req, res) => {
   try {
@@ -52,7 +71,7 @@ const addJob = async (req, res) => {
 
     await jobsCollection.insertMany([newJob]);
 
-    res.status(200).json({
+    res.status(201).json({
       message: "berhasil menambah job",
       data: newJob,
     });
@@ -91,7 +110,7 @@ const applyJob = async (req, res, next) => {
   }
 };
 
-export {addJob, getAllJob, getDetailJob, applyJob}
+export {addJob, getAllJob, getDetailJob, applyJob, getJobByUser}
 
 
 

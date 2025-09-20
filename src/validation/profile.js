@@ -10,8 +10,16 @@ const sanitizeUpdate = (data) => {
       ? validator.escape(validator.trim(String(data.address)))
       : '',
 
-    country: data.country
-      ? validator.escape(validator.trim(String(data.country)))
+    village: data.village
+      ? validator.escape(validator.trim(String(data.village)))
+      : '',
+    
+    subdistrict: data.subdistrict
+      ? validator.escape(validator.trim(String(data.subdistrict)))
+      : '',
+      
+    city: data.city
+      ? validator.escape(validator.trim(String(data.city)))
       : '',
 
     nama: data.nama
@@ -43,13 +51,30 @@ const updateProfileValidation = (dt) => {
     }
   }
 
-  // 🌍 country (opsional, huruf saja kalau diisi)
-  if (data.country && !validator.isAlpha(data.country, 'en-US', { ignore: ' ' })) {
+  // 🏘 village (opsional, huruf saja kalau diisi)
+  if (data.village && !validator.isAlpha(data.village, 'en-US', { ignore: ' ' })) {
     return {
       status: false,
-      message: 'Negara hanya boleh huruf'
+      message: 'Desa hanya boleh huruf'
     }
   }
+
+  // 🏢 subdistrict (opsional, huruf saja kalau diisi)
+  if (data.subdistrict && !validator.isAlpha(data.subdistrict, 'en-US', { ignore: ' ' })) {
+    return {
+      status: false,
+      message: 'Kecamatan hanya boleh huruf'
+    }
+  }
+  // 🌍 city (opsional, huruf saja kalau diisi)
+  if (data.city && !validator.isAlpha(data.city, 'en-US', { ignore: ' ' })) {
+    return {
+      status: false,
+      message: 'Kota hanya boleh huruf'
+    }
+  }
+
+  
   if (data.nama && !validator.isAlpha(data.nama, 'en-US', { ignore: ' ' })) {
     return {
       status: false,

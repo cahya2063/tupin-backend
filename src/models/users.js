@@ -21,7 +21,15 @@ const logInSchema = new mongoos.Schema({
     type: String,
     required: false,
   },
-  country: {
+  city: {
+    type: String,
+    required: false,
+  },
+  subdistrict:{
+    type: String,
+    required: false
+  },
+  village: {
     type: String,
     required: false,
   },
