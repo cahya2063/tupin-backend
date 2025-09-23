@@ -1,5 +1,5 @@
 import express from 'express'
-import { addJob, applyJob, getAllJob, getDetailJob, getJobByUser } from '../controllers/jobs.js'
+import { addJob, applyJob, chooseTechnician, getAllJob, getDetailJob, getJobByUser } from '../controllers/jobs.js'
 import upload from '../middleware/upload.js'
 
 const jobsRouter = express.Router()
@@ -9,5 +9,6 @@ jobsRouter.get('/', getAllJob)
 jobsRouter.get('/:id', getDetailJob)
 jobsRouter.post("/:jobId/apply", applyJob);
 jobsRouter.get("/uploaded/:userId", getJobByUser);
+jobsRouter.post("/:jobId/choose-technician", chooseTechnician);
 
 export default jobsRouter

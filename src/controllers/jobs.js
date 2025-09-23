@@ -32,7 +32,7 @@ const getDetailJob = async (req, res, next)=>{
   }
 }
 
-const getJobByUser = async (req, res, next)=>{
+const getJobByUser = async (req, res, next)=>{ // client
   try {
     const {userId} = req.params
     const jobs = await jobsCollection.find({idCreator: userId})
@@ -52,7 +52,7 @@ const getJobByUser = async (req, res, next)=>{
 }
 
 
-const addJob = async (req, res) => {
+const addJob = async (req, res) => { // client
   try {
     const data = req.body;
     const newJob = {
@@ -79,7 +79,7 @@ const addJob = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-const applyJob = async (req, res, next) => {
+const applyJob = async (req, res, next) => { // technician
   try {
     const { jobId } = req.params;        // ambil id job dari URL
     const { userId } = req.body;         // ambil id user dari body (atau req.user dari authMiddleware)
@@ -110,7 +110,45 @@ const applyJob = async (req, res, next) => {
   }
 };
 
-export {addJob, getAllJob, getDetailJob, applyJob, getJobByUser}
+const chooseTechnician = async (req, res, next)=>{
+  try {
+    
+    const {jobId} = req.params
+    let {technicianId} = req.body
+    // buang kutip ekstra kalau ada
+    if (typeof technicianId === 'string') {
+      technicianId = technicianId.replace(/"/g, '')
+    }
+    console.log('jobId:', jobId, 'technicianId:', technicianId);
+
+    const job = await jobsCollection.findById(jobId)
+    
+    // is Job Exist?
+    if(!job){
+      return res.status(404).json({
+        message: 'Job tidak ditemukan'
+      })
+    }
+
+    if (!job.invites.some(id => id.toString() === technicianId)) {
+      return res.status(400).json({ message: 'Teknisi ini belum apply' })
+    }
+
+    // update job dan technician terpilih
+    job.selectedTechnician = technicianId
+    job.status = 'progress'
+    await job.save()
+
+    return res.status(200).json({
+      message: 'Berhasil memilih teknisi',
+    })
+
+  } catch (error) {
+    next(error)
+  }
+}
+
+export {addJob, getAllJob, getDetailJob, applyJob, getJobByUser, chooseTechnician}
 
 
 

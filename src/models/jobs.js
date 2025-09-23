@@ -41,6 +41,15 @@ const jobsSchema = new mongoos.Schema({
         type: Array,
         required: true
     },
+    selectedTechnician: {
+        type: String,
+        required: false
+    },
+    status: {
+        type: String,
+        enum: ['open', 'progress', 'done'],
+        default: 'open'
+    },
     idCreator: {
         type: String,
         required: true
