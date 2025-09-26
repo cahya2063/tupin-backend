@@ -6,6 +6,7 @@ import { postLogin } from '../controllers/login.js';
 import profileRouter from './profile.js';
 import jobsRouter from './jobs.js';
 import { skillRouter } from './skills.js';
+import notificationRouter from './notification.js';
 const routes = express.Router();
 
 routes.post('/signup', postSignup);
@@ -13,6 +14,7 @@ routes.post('/signin', postLogin)
 routes.use('/profile', authMiddleware, profileRouter)
 routes.use('/jobs', authMiddleware, jobsRouter)
 routes.use('/skills', authMiddleware, skillRouter)
+routes.use('/notifications', authMiddleware, notificationRouter)
 routes.get('/', (req, res) => {
   res.json({
     message: 'Hello World'

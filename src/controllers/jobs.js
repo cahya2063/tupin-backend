@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import jobsCollection from "../models/jobs.js";
+import notificationCollection from "../models/notification.js";
 const ObjectId = mongoose.Types.ObjectId
 
 const getAllJob = async (req, res)=>{
@@ -110,43 +111,54 @@ const applyJob = async (req, res, next) => { // technician
   }
 };
 
-const chooseTechnician = async (req, res, next)=>{
+const chooseTechnician = async (req, res, next) => {
   try {
-    
-    const {jobId} = req.params
-    let {technicianId} = req.body
-    // buang kutip ekstra kalau ada
-    if (typeof technicianId === 'string') {
-      technicianId = technicianId.replace(/"/g, '')
-    }
-    console.log('jobId:', jobId, 'technicianId:', technicianId);
+    const { jobId } = req.params;
+    let { technicianId } = req.body;
 
-    const job = await jobsCollection.findById(jobId)
-    
-    // is Job Exist?
-    if(!job){
-      return res.status(404).json({
-        message: 'Job tidak ditemukan'
-      })
+    // kalau technicianId dikirim string dengan tanda kutip, hapus kutipnya
+    if (typeof technicianId === "string") {
+      technicianId = technicianId.replace(/"/g, "");
     }
 
-    if (!job.invites.some(id => id.toString() === technicianId)) {
-      return res.status(400).json({ message: 'Teknisi ini belum apply' })
+    // cek apakah job ada
+    const job = await jobsCollection.findById(jobId);
+    if (!job) {
+      return res.status(404).json({ message: "Job tidak ditemukan" });
     }
 
-    // update job dan technician terpilih
-    job.selectedTechnician = technicianId
-    job.status = 'progress'
-    await job.save()
+    // cek apakah teknisi memang apply
+    const alreadyApplied = job.invites.some(
+      (id) => id.toString() === technicianId
+    );
+    if (!alreadyApplied) {
+      return res.status(400).json({ message: "Teknisi ini belum apply" });
+    }
+
+    // update job
+    job.selectedTechnician = technicianId;
+    job.status = "progress";
+    await job.save();
+
+    // buat notifikasi
+    const notif = await notificationCollection.create({
+      userId: technicianId,
+      jobId: jobId,
+      message: `Anda terpilih untuk mengerjakan job "${job.title}"`,
+    });
+
+    console.log("✅ Notifikasi tersimpan:", notif); // log untuk debugging
 
     return res.status(200).json({
-      message: 'Berhasil memilih teknisi',
-    })
-
+      message: "Berhasil memilih teknisi dan mengirim notifikasi",
+      notification: notif,
+    });
   } catch (error) {
-    next(error)
+    console.error("❌ Error simpan notifikasi:", error);
+    next(error);
   }
-}
+};
+
 
 export {addJob, getAllJob, getDetailJob, applyJob, getJobByUser, chooseTechnician}
 
