@@ -19,5 +19,23 @@ const getNotificationsByUser = async(req, res, next)=>{
     }
 }
 
+const readNotification = async(req, res, next)=>{
+    try {
+        const {notificationId} = req.params
+        const notification = await notificationCollection.findById(notificationId)
+        if(!notification){
+            return res.status(404).json({message: 'Notifikasi tidak ditemukan'})
+        }
+        notification.isRead = true
+        await notification.save()
+        return res.status(200).json({
+            message: 'Berhasil membaca notifikasi',
+            notification: notification
+        })
+    } catch (error) {
+        next(error)
+    }
+}
 
-export {getNotificationsByUser}
+
+export {getNotificationsByUser, readNotification}
