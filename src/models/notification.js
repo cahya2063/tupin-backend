@@ -1,4 +1,3 @@
-import mongoose from "mongoose";
 import mongoos from "../utils/db.js";
 
 const notificationSchema = new mongoos.Schema({
