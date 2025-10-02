@@ -8,6 +8,7 @@ import jobsRouter from './jobs.js';
 import { skillRouter } from './skills.js';
 import notificationRouter from './notification.js';
 import chatRouter from './chat.js';
+import messageRouter from './message.js';
 const routes = express.Router();
 
 routes.post('/signup', postSignup);
@@ -17,6 +18,7 @@ routes.use('/jobs', authMiddleware, jobsRouter)
 routes.use('/skills', authMiddleware, skillRouter)
 routes.use('/notifications', authMiddleware, notificationRouter)
 routes.use('/chats', authMiddleware, chatRouter)
+routes.use('/messages', authMiddleware, messageRouter)
 routes.get('/', (req, res) => {
   res.json({
     message: 'Hello World'

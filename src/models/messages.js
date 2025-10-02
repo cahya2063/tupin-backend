@@ -1,4 +1,4 @@
-import mongoos from "../utils/db";
+import mongoos from "../utils/db.js";
 
 const messageSchema = new mongoos.Schema({
     chatId: {
@@ -16,7 +16,11 @@ const messageSchema = new mongoos.Schema({
     createdAt: {
         type: Date,
         default: Date.now
-    }
+    },
+    isRead: { 
+        type: Boolean, 
+        default: false 
+    },
 })
 
 const messageCollection = mongoos.model('messages', messageSchema)
