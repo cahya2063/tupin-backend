@@ -1,6 +1,6 @@
 import chatCollection from "../models/chats.js";
 
-const createChat = async (req, res, next)=>{
+const createChat = async (req, res, next)=>{    
     try {
         const {clientId, technicianId} = req.body;
 
@@ -17,9 +17,25 @@ const createChat = async (req, res, next)=>{
             technicianId: technicianId
         })
         await chat.save()
+        res.status(201).json({
+            message: 'chat berhasil dibuat',
+        })
     } catch (error) {
         next(error)
     }
 }
 
-export { createChat }
+const getChatByUserId = async (req, res, next)=>{
+    try {
+        const { userId } = req.params;
+        const chats = await chatCollection.find({ $or: [{ clientId: userId }, { technicianId: userId }] });
+        res.status(200).json({
+            message: 'chats berhasil di ambil',
+            chats: chats
+        });
+    } catch (error) {
+        next(error)
+    }
+}
+
+export { createChat, getChatByUserId }
