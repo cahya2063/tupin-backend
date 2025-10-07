@@ -4,16 +4,22 @@ import path from 'path';
 import url from 'url';
 import routes from './routes/index.js';
 import cors from 'cors'
+import http from 'http'
+import { Server } from 'socket.io';
 
 
 const app = express()
 const port = 3000
+const origin = '*'
+
+const server = http.createServer(app)
 app.use(cors({
-    origin: 'http://localhost:5173',
+    origin: origin,
     methods: ['GET','POST','PUT','DELETE'],
     credetials: true
 }))
 
+//middleware
 // Middleware untuk parsing JSON
 app.use(express.json());
 
@@ -24,8 +30,43 @@ app.use("/uploads", express.static("uploads"));
 
 app.use(routes)
 
-app.listen(port, ()=>{
+
+const io = new Server(server, {
+    cors:{
+        origin: origin,
+        methods: ['GET', 'POST']
+    }
+})
+
+//event koneksi
+io.on('connection', (socket)=>{
+    // console.log('user connected : ', socket.id);
+
+    // user join room berdasarkan chatId
+    socket.on('join_room', (chatId)=>{
+        socket.join(chatId)
+        // console.log(`user ${socket.id} join room ${chatId}`);
+
+        
+    })
+
+    socket.on('send_message', (data)=>{
+        console.log('pesan baru : ', data);
+        // kirim pesan ke user yang satu room
+        io.to(data.chatId).emit('receive_message', data)
+
+    })
+
+    socket.on('disconnect', ()=>{
+        // console.log('user disconected : ', socket.id);
+        
+    })
+
+    
+})
+
+server.listen(port, ()=>{
     console.log(`Server is running on http://localhost:${port}`);
 })
 
-export default app
+export {io}

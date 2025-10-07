@@ -7,8 +7,3 @@ messageRouter.post('/send', createMessage)
 messageRouter.get('/read/:chatId', getMessageByChatId)
 
 export default messageRouter
-
-
-
-
-
