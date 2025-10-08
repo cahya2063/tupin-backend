@@ -52,6 +52,24 @@ const getJobByUser = async (req, res, next)=>{ // client
   }
 }
 
+const getAcceptedJob = async(req, res, next)=>{
+  try {
+    const {technicianId} = req.params
+    const jobs = await jobsCollection.find({selectedTechnician: technicianId})
+    if(!jobs || jobs.length === 0){
+      return res.status(404).json({
+        message: 'tidak ada job yang diterima'
+      })
+    }
+    return res.status(200).json({
+      message: 'berhasil mengambil job',
+      jobs
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
 
 const addJob = async (req, res) => { // client
   try {
@@ -160,7 +178,7 @@ const chooseTechnician = async (req, res, next) => {
 };
 
 
-export {addJob, getAllJob, getDetailJob, applyJob, getJobByUser, chooseTechnician}
+export {addJob, getAllJob, getDetailJob, applyJob, getJobByUser, chooseTechnician, getAcceptedJob}
 
 
 
