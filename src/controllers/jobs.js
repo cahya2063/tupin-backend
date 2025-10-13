@@ -1,6 +1,8 @@
 import mongoose from "mongoose";
 import jobsCollection from "../models/jobs.js";
 import notificationCollection from "../models/notification.js";
+import chatCollection from "../models/chats.js";
+import messageCollection from "../models/messages.js";
 const ObjectId = mongoose.Types.ObjectId
 
 const getAllJob = async (req, res)=>{
@@ -177,8 +179,53 @@ const chooseTechnician = async (req, res, next) => {
   }
 };
 
+const cancelJobs = async (req, res, next)=>{
+  try {
+    
+    const {jobId} = req.params
+    const job = await jobsCollection.findById(jobId)
+    if(!job){
+      return res.status(404).json({
+        message: 'data job tidak ditemukan'
+      })
+    }
 
-export {addJob, getAllJob, getDetailJob, applyJob, getJobByUser, chooseTechnician, getAcceptedJob}
+    if(!job.selectedTechnician){
+      
+      return res.status(400).json({
+        message: 'job ini belum memilih teknisi',
+      })
+    }
+    
+
+    // const technicianId = job.selectedTechnician
+    // const clientId = job.idCreator
+
+    job.status = 'open'
+    job.selectedTechnician = null
+    await job.save()
+
+    // const chat = await chatCollection.findOneAndDelete({
+    //   clientId: clientId,
+    //   technicianId: technicianId
+    // })
+
+    // if(chat){
+    //   await messageCollection.deleteMany({
+    //     chatId: chat._id
+    //   })
+    // }
+
+    return res.status(200).json({
+      message: 'berhasil cancel job'
+    })
+  } catch (error) {
+    next(error)
+  }
+  
+}
+
+export {addJob, getAllJob, getDetailJob, applyJob, getJobByUser, chooseTechnician, getAcceptedJob, cancelJobs}
 
 
 
