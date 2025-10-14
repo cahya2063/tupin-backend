@@ -157,7 +157,7 @@ const chooseTechnician = async (req, res, next) => {
 
     // update job
     job.selectedTechnician = technicianId;
-    job.status = "progress";
+    job.status = "pending";
     await job.save();
 
     // buat notifikasi
