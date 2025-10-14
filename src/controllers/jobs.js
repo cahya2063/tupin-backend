@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import jobsCollection from "../models/jobs.js";
 import notificationCollection from "../models/notification.js";
+import userCollection from "../models/users.js"
 import chatCollection from "../models/chats.js";
 import messageCollection from "../models/messages.js";
 const ObjectId = mongoose.Types.ObjectId
@@ -179,6 +180,42 @@ const chooseTechnician = async (req, res, next) => {
   }
 };
 
+const technicianRequest = async(req, res, next)=>{
+  try {
+    
+    const {jobId} = req.params
+    const {clientId, technicianId} = req.body
+    
+    const technician = await userCollection.findById(technicianId)
+    console.log('technician', technician);
+    const job = await jobsCollection.findOne({
+      _id: jobId,
+      status: 'pending'
+    })
+    if (!job) {
+      res.status(404).json({
+        message: 'data jobs tidak ditemukan'
+      })
+    }
+
+    job.status = 'request'
+    job.save()
+
+    // buat notifikasi
+    const notif = await notificationCollection.create({
+      userId: clientId,
+      jobId: jobId,
+      message: `teknisi ${technician.nama} mengajukan request perbaikan pada ${job.title}`,
+    });
+
+    res.status(200).json({
+      message: 'berhasil mengajukan request'
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
 const cancelJobs = async (req, res, next)=>{
   try {
     
@@ -225,7 +262,7 @@ const cancelJobs = async (req, res, next)=>{
   
 }
 
-export {addJob, getAllJob, getDetailJob, applyJob, getJobByUser, chooseTechnician, getAcceptedJob, cancelJobs}
+export {addJob, getAllJob, getDetailJob, applyJob, getJobByUser, chooseTechnician, getAcceptedJob, technicianRequest, cancelJobs}
 
 
 
