@@ -183,11 +183,7 @@ const chooseTechnician = async (req, res, next) => {
 const technicianRequest = async(req, res, next)=>{
   try {
     
-    const {jobId} = req.params
-    const {clientId, technicianId} = req.body
-    
-    const technician = await userCollection.findById(technicianId)
-    console.log('technician', technician);
+    const {jobId} = req.params    
     const job = await jobsCollection.findOne({
       _id: jobId,
       status: 'pending'
@@ -197,16 +193,25 @@ const technicianRequest = async(req, res, next)=>{
         message: 'data jobs tidak ditemukan'
       })
     }
+    const technician = await userCollection.findById(job.selectedTechnician)
+    const client = await userCollection.findById(job.idCreator)
 
     job.status = 'request'
     job.save()
 
-    // buat notifikasi
-    const notif = await notificationCollection.create({
-      userId: clientId,
+    // buat notifikasi client
+    await notificationCollection.create({
+      userId: client.id,
       jobId: jobId,
       message: `teknisi ${technician.nama} mengajukan request perbaikan pada ${job.title}`,
     });
+
+    // buat notifikasi teknisi
+    await notificationCollection.create({
+      userId: technician.id,
+      jobId: jobId,
+      message: `berhasil mengirim request perbaikan ke ${client.nama} tunggu konfirmasinya!`
+    })
 
     res.status(200).json({
       message: 'berhasil mengajukan request'
@@ -216,6 +221,42 @@ const technicianRequest = async(req, res, next)=>{
   }
 }
 
+const approveJobRequest = async(req, res, next)=>{// client
+  const {jobId} = req.params
+  const job = await jobsCollection.findOne({
+    _id: jobId,
+    status: 'request'
+  })
+
+  if(!job){
+    res.status(404).json({
+      message: 'job tidak ditemukan'
+    })
+  }
+  const technician = await userCollection.findById(job.selectedTechnician)
+  const client = await userCollection.findById(job.idCreator)
+
+  job.status = 'progress'
+  job.save()
+
+  // buat notifikasi client
+    await notificationCollection.create({
+      userId: client.id,
+      jobId: jobId,
+      message: `berhasil menyetujui ${technician.nama} untuk mengerjakan ${job.title}`,
+    });
+
+    // buat notifikasi teknisi
+    await notificationCollection.create({
+      userId: technician.id,
+      jobId: jobId,
+      message: `selamat client ${client.nama} menyetujui request perbaikanmu! kamu sudah bisa mulai memperbaiki ${job.title}`
+    })
+
+    res.status(200).json({
+      message: 'berhasil menyetujui request'
+    })
+}
 const cancelJobs = async (req, res, next)=>{
   try {
     
@@ -262,7 +303,18 @@ const cancelJobs = async (req, res, next)=>{
   
 }
 
-export {addJob, getAllJob, getDetailJob, applyJob, getJobByUser, chooseTechnician, getAcceptedJob, technicianRequest, cancelJobs}
+export {
+  addJob, 
+  getAllJob, 
+  getDetailJob, 
+  applyJob, 
+  getJobByUser, 
+  chooseTechnician, 
+  getAcceptedJob, 
+  technicianRequest, 
+  approveJobRequest,
+  cancelJobs
+}
 
 
 
