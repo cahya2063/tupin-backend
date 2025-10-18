@@ -2,8 +2,7 @@ import mongoose from "mongoose";
 import jobsCollection from "../models/jobs.js";
 import notificationCollection from "../models/notification.js";
 import userCollection from "../models/users.js"
-import chatCollection from "../models/chats.js";
-import messageCollection from "../models/messages.js";
+
 const ObjectId = mongoose.Types.ObjectId
 
 const getAllJob = async (req, res)=>{
@@ -251,6 +250,44 @@ const approveJobRequest = async(req, res, next)=>{// client
       userId: technician.id,
       jobId: jobId,
       message: `selamat client ${client.nama} menyetujui request perbaikanmu! kamu sudah bisa mulai memperbaiki ${job.title}`
+    })
+
+    res.status(200).json({
+      message: 'berhasil menyetujui request'
+    })
+}
+
+const doneJob = async(req, res, next)=>{
+  const {jobId} = req.params
+  const job = await jobsCollection.findOne({
+    _id: jobId,
+    status: 'progress'
+  })
+
+  if(!job){
+    res.status(404).json({
+      message: 'job tidak ditemukan'
+    })
+  }
+
+  const technician = await userCollection.findById(job.selectedTechnician)
+  const client = await userCollection.findById(job.idCreator)
+
+  job.status = 'done'
+  job.save()
+
+  // buat notifikasi client
+    await notificationCollection.create({
+      userId: client.id,
+      jobId: jobId,
+      message: `teknisi ${technician.nama} sudah menyelesaikan ${job.title} konfirmasi pada kami jika alatmu sudah selesai`,
+    });
+
+    // buat notifikasi teknisi
+    await notificationCollection.create({
+      userId: technician.id,
+      jobId: jobId,
+      message: `tunggu client mengkonfirmasi jika ${job.title} sudah selesai`
     })
 
     res.status(200).json({
