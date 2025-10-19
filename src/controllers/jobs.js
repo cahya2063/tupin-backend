@@ -291,7 +291,7 @@ const doneJob = async(req, res, next)=>{
     })
 
     res.status(200).json({
-      message: 'berhasil menyetujui request'
+      message: 'berhasil menyelesaikan job'
     })
 }
 const cancelJobs = async (req, res, next)=>{
@@ -350,6 +350,7 @@ export {
   getAcceptedJob, 
   technicianRequest, 
   approveJobRequest,
+  doneJob,
   cancelJobs
 }
 
