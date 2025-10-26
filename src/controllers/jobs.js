@@ -294,6 +294,68 @@ const doneJob = async(req, res, next)=>{
       message: 'berhasil menyelesaikan job'
     })
 }
+const isJobCompleted = async(req, res, next)=>{
+  try {
+    const {jobId} = req.params
+    const {status} = req.body
+    const job = await jobsCollection.findOne({
+      _id: jobId,
+      status: 'done'
+    })
+
+    if(!job){
+      res.status(404).json({
+        message: 'job tidak ditemukan'
+      })
+    }
+
+    const technician = await userCollection.findById(job.selectedTechnician)
+    const client = await userCollection.findById(job.idCreator)
+    
+    if(status === 'uncompleted'){
+      job.status = 'progress'
+      job.save()
+      await notificationCollection.create({
+        userId: technician.id,
+        message: `kata client kamu belum menyelesaikan pekerjaan ${job.title}`,
+        jobId: jobId
+      })
+      await notificationCollection.create({
+        userId: client.id,
+        message: `berhasil mengkonfirmasi bahwa alat belum selesai dan memberitahu teknisi ${technician.nama}`,
+        jobId: jobId
+      })
+      return res.status(200).json({
+        message: `berhasil mengkonfirmasi job ${job.title} belum selesai`
+      })
+    }
+    else if(status === 'completed'){
+      job.status = 'completed'
+      job.save()
+      await notificationCollection.create({
+        userId: technician.id,
+        message: `selamat pekerjaanmu pada ${job.title} telah selesai dan dikonfirmasi oleh client ${client.nama}`,
+        jobId: jobId
+      })
+      await notificationCollection.create({
+        userId: client.id,
+        message: `berhasil mengkonfirmasi job selesai dan memberi tahu teknisi ${technician.nama}`,
+        jobId: jobId
+      })
+      res.status(200).json({
+        message: 'berhasil mengkonfirmasi job selesai'
+      })
+    }
+    else{
+      res.status(400).json({
+        message: 'request status tidak valid'
+      })
+    }
+  } catch (error) {
+    next(error)
+  }
+  
+}
 const cancelJobs = async (req, res, next)=>{
   try {
     
@@ -351,6 +413,7 @@ export {
   technicianRequest, 
   approveJobRequest,
   doneJob,
+  isJobCompleted,
   cancelJobs
 }
 

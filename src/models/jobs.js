@@ -47,7 +47,7 @@ const jobsSchema = new mongoos.Schema({
     },
     status: {
         type: String,
-        enum: ['open', 'pending', 'request', 'progress', 'done'],
+        enum: ['open', 'pending', 'request', 'progress', 'done', 'completed'],
         default: 'open'
     },
     idCreator: {
