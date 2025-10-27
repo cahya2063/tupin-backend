@@ -37,5 +37,16 @@ const readNotification = async(req, res, next)=>{
     }
 }
 
+const deleteNotification = async(req, res, next)=>{
+    try {
+        const {notificationId} = req.params
+        await notificationCollection.findByIdAndDelete(notificationId)
+        return res.status(200).json({
+            message: 'Notifikasi berhasil dihapus'
+        })
+    } catch (error) {
+        next(error)
+    }
+}
 
-export {getNotificationsByUser, readNotification}
+export {getNotificationsByUser, readNotification, deleteNotification}
