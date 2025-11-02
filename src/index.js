@@ -65,6 +65,14 @@ io.on('connection', (socket)=>{
     
 })
 
+// Middleware error handler global
+app.use((err, req, res, next) => {
+    console.error('Terjadi error:', err.stack)
+    res.status(500).json({
+        message: err.message || 'Terjadi kesalahan pada server'
+    })
+})
+
 server.listen(port, ()=>{
     console.log(`Server is running on http://localhost:${port}`);
 })

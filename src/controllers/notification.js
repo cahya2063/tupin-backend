@@ -18,6 +18,13 @@ const getNotificationsByUser = async(req, res, next)=>{
         next(error)
     }
 }
+const createNotification = async(userId, jobId, message)=>{
+   await notificationCollection.create({
+        userId,
+        jobId,
+        message
+    })
+}
 
 const readNotification = async(req, res, next)=>{
     try {
@@ -49,4 +56,4 @@ const deleteNotification = async(req, res, next)=>{
     }
 }
 
-export {getNotificationsByUser, readNotification, deleteNotification}
+export {getNotificationsByUser, createNotification, readNotification, deleteNotification}
