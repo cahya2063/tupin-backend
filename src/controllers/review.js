@@ -14,7 +14,7 @@ const createReview = async(req, res, next)=>{
         await newRating.save()
         createNotification(receiverId, jobId, 'berhasil memberi rating ke teknisi')
         res.status(201).json({
-            message: 'berhasil memberi rating'
+            message: 'berhasil memberi review'
         })
     } catch (error) {
         next(error)
@@ -26,6 +26,11 @@ const getReviewByUserId = async(req, res, next)=>{
         const review = await reviewCollection.find({
             receiverId: userId
         })
+        if(!review){
+            res.status(404).json({
+                message: 'user belum melakukan review'
+            })
+        }
         res.status(200).json({
             message: `berhasil mengambil data review`,
             review: review
@@ -35,4 +40,26 @@ const getReviewByUserId = async(req, res, next)=>{
     }
 }
 
-export {createReview, getReviewByUserId}
+const getReviewByJobId = async(req, res, next)=>{
+    try {
+        const {jobId, userId} = req.params
+        const review = await reviewCollection.findOne({
+            jobId: jobId,
+            senderId: userId
+        })
+        if(!review){
+            res.status(404).json({
+                message: 'user belum melakukan review',
+                review: review
+            })
+        }
+        res.status(200).json({
+            message: `berhasil mengambil data review`,
+            review: review
+        })
+    } catch (error) {
+        next(error)
+    }
+}
+
+export {createReview, getReviewByUserId, getReviewByJobId}
