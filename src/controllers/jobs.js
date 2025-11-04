@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import jobsCollection from "../models/jobs.js";
 import notificationCollection from "../models/notification.js";
 import userCollection from "../models/users.js"
+import { createNotification } from "./notification.js";
 
 const ObjectId = mongoose.Types.ObjectId
 
@@ -90,7 +91,9 @@ const addJob = async (req, res) => { // client
       idCreator: data.userId
     };
 
-    await jobsCollection.insertMany([newJob]);
+    const result = await jobsCollection.insertMany([newJob]);
+    const job = result[0];
+    createNotification(job.idCreator, job.id, `berhasil mengunggah job baru dengan judul ${job.title}` )
 
     res.status(201).json({
       message: "berhasil menambah job",
@@ -161,17 +164,10 @@ const chooseTechnician = async (req, res, next) => {
     await job.save();
 
     // buat notifikasi
-    const notif = await notificationCollection.create({
-      userId: technicianId,
-      jobId: jobId,
-      message: `Anda terpilih untuk mengerjakan job "${job.title}"`,
-    });
-
-    console.log("✅ Notifikasi tersimpan:", notif); // log untuk debugging
+    createNotification(technicianId, jobId, `Anda terpilih untuk mengerjakan job "${job.title}"`)
 
     return res.status(200).json({
       message: "Berhasil memilih teknisi dan mengirim notifikasi",
-      notification: notif,
     });
   } catch (error) {
     console.error("❌ Error simpan notifikasi:", error);
@@ -199,18 +195,10 @@ const technicianRequest = async(req, res, next)=>{
     job.save()
 
     // buat notifikasi client
-    await notificationCollection.create({
-      userId: client.id,
-      jobId: jobId,
-      message: `teknisi ${technician.nama} mengajukan request perbaikan pada ${job.title}`,
-    });
+    createNotification(client.id, jobId, `teknisi ${technician.nama} mengajukan request perbaikan pada ${job.title}`)
 
     // buat notifikasi teknisi
-    await notificationCollection.create({
-      userId: technician.id,
-      jobId: jobId,
-      message: `berhasil mengirim request perbaikan ke ${client.nama} tunggu konfirmasinya!`
-    })
+    createNotification(technician.id, jobId, `berhasil mengirim request perbaikan ke ${client.nama} tunggu konfirmasinya!`)
 
     res.status(200).json({
       message: 'berhasil mengajukan request'
@@ -238,19 +226,11 @@ const approveJobRequest = async(req, res, next)=>{// client
   job.status = 'progress'
   job.save()
 
-  // buat notifikasi client
-    await notificationCollection.create({
-      userId: client.id,
-      jobId: jobId,
-      message: `berhasil menyetujui ${technician.nama} untuk mengerjakan ${job.title}`,
-    });
+    // buat notifikasi client
+    createNotification(client.id, jobId, `berhasil menyetujui ${technician.nama} untuk mengerjakan ${job.title}`)
 
     // buat notifikasi teknisi
-    await notificationCollection.create({
-      userId: technician.id,
-      jobId: jobId,
-      message: `selamat client ${client.nama} menyetujui request perbaikanmu! kamu sudah bisa mulai memperbaiki ${job.title}`
-    })
+    createNotification(technician.id, jobId, `selamat client ${client.nama} menyetujui request perbaikanmu! kamu sudah bisa mulai memperbaiki ${job.title}`)
 
     res.status(200).json({
       message: 'berhasil menyetujui request'
@@ -277,18 +257,10 @@ const doneJob = async(req, res, next)=>{
   job.save()
 
   // buat notifikasi client
-    await notificationCollection.create({
-      userId: client.id,
-      jobId: jobId,
-      message: `teknisi ${technician.nama} sudah menyelesaikan ${job.title} konfirmasi pada kami jika alatmu sudah selesai`,
-    });
+  createNotification(client.id, jobId, `teknisi ${technician.nama} sudah menyelesaikan ${job.title} konfirmasi pada kami jika alatmu sudah selesai`)
 
     // buat notifikasi teknisi
-    await notificationCollection.create({
-      userId: technician.id,
-      jobId: jobId,
-      message: `tunggu client mengkonfirmasi jika ${job.title} sudah selesai`
-    })
+    createNotification(technician.id, jobId, `tunggu client mengkonfirmasi jika ${job.title} sudah selesai`)
 
     res.status(200).json({
       message: 'berhasil menyelesaikan job'
@@ -315,16 +287,12 @@ const isJobCompleted = async(req, res, next)=>{
     if(status === 'uncompleted'){
       job.status = 'progress'
       job.save()
-      await notificationCollection.create({
-        userId: technician.id,
-        message: `kata client kamu belum menyelesaikan pekerjaan ${job.title}`,
-        jobId: jobId
-      })
-      await notificationCollection.create({
-        userId: client.id,
-        message: `berhasil mengkonfirmasi bahwa alat belum selesai dan memberitahu teknisi ${technician.nama}`,
-        jobId: jobId
-      })
+      //notifikasi ke teknisi
+      createNotification(technician.id, jobId, `kata client kamu belum menyelesaikan pekerjaan ${job.title}`)
+
+      //notifikasi ke client
+      createNotification(client.id, jobId, `berhasil mengkonfirmasi bahwa alat belum selesai dan memberitahu teknisi ${technician.nama}`)
+
       return res.status(200).json({
         message: `berhasil mengkonfirmasi job ${job.title} belum selesai`
       })
@@ -332,16 +300,13 @@ const isJobCompleted = async(req, res, next)=>{
     else if(status === 'completed'){
       job.status = 'completed'
       job.save()
-      await notificationCollection.create({
-        userId: technician.id,
-        message: `selamat pekerjaanmu pada ${job.title} telah selesai dan dikonfirmasi oleh client ${client.nama}`,
-        jobId: jobId
-      })
-      await notificationCollection.create({
-        userId: client.id,
-        message: `berhasil mengkonfirmasi job selesai dan memberi tahu teknisi ${technician.nama}`,
-        jobId: jobId
-      })
+
+      // notifikasi ke teknisi
+      createNotification(technician.id, jobId, `selamat pekerjaanmu pada ${job.title} telah selesai dan dikonfirmasi oleh client ${client.nama}`)
+
+      // notifikasi ke client
+      createNotification(client.id, jobId, `berhasil mengkonfirmasi job selesai dan memberi tahu teknisi ${technician.nama}`)
+
       res.status(200).json({
         message: 'berhasil mengkonfirmasi job selesai'
       })

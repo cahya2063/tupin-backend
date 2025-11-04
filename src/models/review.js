@@ -27,5 +27,5 @@ const ratingSchema = new mongoos.Schema({
     }
 })
 
-const ratingCollection = mongoos.model('reviews', ratingSchema)
-export default ratingCollection
+const reviewCollection = mongoos.model('reviews', ratingSchema)
+export default reviewCollection
