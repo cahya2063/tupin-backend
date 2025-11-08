@@ -9,6 +9,11 @@ const messageSchema = new mongoos.Schema({
         type: String,
         required: true
     },
+    messageType: {
+        type: String,
+        enum: ['message', 'location'],
+        default: 'message'
+    },
     message: {
         type: String,
         required: true

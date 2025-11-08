@@ -21,10 +21,11 @@ const getMessageByChatId = async (req, res, next)=>{
 
 const createMessage = async (req, res, next)=>{
     try {
-        const {chatId, senderId, message} = req.body
+        const {chatId, senderId, message, messageType} = req.body
         const newMessage = new messageCollection({
             chatId,
             senderId,
+            messageType,
             message
         })
 

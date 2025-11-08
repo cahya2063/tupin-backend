@@ -52,6 +52,7 @@ io.on('connection', (socket)=>{
 
     socket.on('send_message', (data)=>{
         console.log('pesan baru : ', data);
+        
         // kirim pesan ke user yang satu room
         io.to(data.chatId).emit('receive_message', data)
 
