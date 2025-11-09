@@ -22,13 +22,31 @@ const getMessageByChatId = async (req, res, next)=>{
 const createMessage = async (req, res, next)=>{
     try {
         const {chatId, senderId, message, messageType} = req.body
-        const newMessage = new messageCollection({
-            chatId,
-            senderId,
-            messageType,
-            message
-        })
 
+        // console.log('type : ',messageType);
+        let newMessage;
+        
+        if(messageType == 'location'){
+            newMessage = new messageCollection({
+                chatId,
+                senderId,
+                messageType,
+                message,
+                latitude: req.body.latitude,
+                longitude: req.body.longitude
+            })
+        }
+        
+        else if(messageType == 'message'){
+
+            newMessage = new messageCollection({
+                chatId,
+                senderId,
+                messageType,
+                message
+            })
+    
+        }
         await newMessage.save()
         // kirim pesan real-time ke room chat
         io.to(chatId).emit('receive_message', newMessage)

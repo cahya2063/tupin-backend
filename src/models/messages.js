@@ -18,6 +18,14 @@ const messageSchema = new mongoos.Schema({
         type: String,
         required: true
     },
+    latitude: {
+        type: Number,
+        required: false
+    },
+    longitude: {
+        type: Number,
+        required: false
+    },
     createdAt: {
         type: Date,
         default: Date.now
