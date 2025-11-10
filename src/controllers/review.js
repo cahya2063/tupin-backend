@@ -1,4 +1,5 @@
 import reviewCollection from "../models/review.js"
+import userCollection from "../models/users.js"
 import { createNotification } from "./notification.js"
 
 const createReview = async(req, res, next)=>{
@@ -11,8 +12,11 @@ const createReview = async(req, res, next)=>{
             rating: rating,
             comment: comment
         })
+        const senderUser = await userCollection.findOne({_id: senderId})
+        const receiverUser = await userCollection.findOne({_id: receiverId})
         await newRating.save()
-        createNotification(receiverId, jobId, 'berhasil memberi rating ke teknisi')
+        createNotification(senderId, jobId, `berhasil memberi review ke ${receiverUser.nama}`)
+        createNotification(receiverId, jobId, `${senderUser.nama} memberimu review`)
         res.status(201).json({
             message: 'berhasil memberi review'
         })
