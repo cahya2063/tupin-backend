@@ -25,6 +25,12 @@ const jobsSchema = new mongoos.Schema({
         type: String,
         required: false
     },
+    paymentMethod: {
+        type: String,
+        enum: ['cash', 'gateway'],
+        required: false,
+        default: 'cash'
+    },
     budget: {
         type: Number,
         required: true

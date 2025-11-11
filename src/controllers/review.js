@@ -2,7 +2,7 @@ import reviewCollection from "../models/review.js"
 import userCollection from "../models/users.js"
 import { createNotification } from "./notification.js"
 
-const createReview = async(req, res, next)=>{
+const createReview = async(req, res, next)=>{// client, teknisi
     try {
         const {senderId, receiverId, jobId, rating, comment} = req.body
         const newRating = new reviewCollection({
@@ -24,7 +24,7 @@ const createReview = async(req, res, next)=>{
         next(error)
     }
 }
-const getReviewByUserId = async(req, res, next)=>{
+const getReviewByUserId = async(req, res, next)=>{//client teknisi
     try {
         const {userId} = req.params
         const review = await reviewCollection.find({
@@ -44,7 +44,7 @@ const getReviewByUserId = async(req, res, next)=>{
     }
 }
 
-const getReviewByJobId = async(req, res, next)=>{
+const getReviewByJobId = async(req, res, next)=>{// client, teknisi
     try {
         const {jobId, userId} = req.params
         const review = await reviewCollection.findOne({

@@ -1,7 +1,7 @@
 import messageCollection from "../models/messages.js"
 import { io } from "../index.js"
 
-const getMessageByChatId = async (req, res, next)=>{
+const getMessageByChatId = async (req, res, next)=>{// client, teknisi
     try {
         const {chatId} = req.params
         const messages = await messageCollection.find({chatId : chatId})
@@ -19,7 +19,7 @@ const getMessageByChatId = async (req, res, next)=>{
     }
 }
 
-const createMessage = async (req, res, next)=>{
+const createMessage = async (req, res, next)=>{// client, teknisi
     try {
         const {chatId, senderId, message, messageType} = req.body
 
@@ -50,6 +50,7 @@ const createMessage = async (req, res, next)=>{
         await newMessage.save()
         // kirim pesan real-time ke room chat
         io.to(chatId).emit('receive_message', newMessage)
+        
         res.status(201).json({
             message: 'pesan berhasil terkirim'
         })

@@ -1,6 +1,6 @@
 import chatCollection from "../models/chats.js";
 
-const createChat = async (req, res, next)=>{    
+const createChat = async (req, res, next)=>{// teknisi, client
     try {
         const {clientId, technicianId} = req.body;
 
@@ -25,7 +25,7 @@ const createChat = async (req, res, next)=>{
     }
 }
 
-const getChatByUserId = async (req, res, next)=>{
+const getChatByUserId = async (req, res, next)=>{// teknisi, client
     try {
         const { userId } = req.params;
         const chats = await chatCollection.find({ $or: [{ clientId: userId }, { technicianId: userId }] });

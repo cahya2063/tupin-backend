@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken'
 import 'dotenv/config'
 
 const JWT_SECRET = process.env.JWT_SECRET
-const postLogin = async(req, res)=>{
+const postLogin = async(req, res)=>{// all role
     try {
         const validasi = loginValidation(req.body)
         if(validasi?.status === false){

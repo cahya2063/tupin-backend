@@ -2,7 +2,7 @@ import userCollection from '../models/users.js';
 import { encrypt } from '../utils/bcrypt.js';
 import registerValidation from '../validation/register.js';
 
-const postSignup = async (req, res) => {
+const postSignup = async (req, res) => {// client, teknisi
   const validasi = registerValidation(req.body);
   if (validasi?.status === false) {
     return res.status(400).json({

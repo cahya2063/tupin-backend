@@ -1,6 +1,6 @@
 import notificationCollection from "../models/notification.js"
 
-const getNotificationsByUser = async(req, res, next)=>{
+const getNotificationsByUser = async(req, res, next)=>{// client, teknisi
     try {
         const {userId} = req.params
         const notifications = await notificationCollection.find({userId: userId})
@@ -18,7 +18,7 @@ const getNotificationsByUser = async(req, res, next)=>{
         next(error)
     }
 }
-const createNotification = async(userId, jobId, message)=>{
+const createNotification = async(userId, jobId, message)=>{// siapapun yang memanggil
    await notificationCollection.create({
         userId,
         jobId,
@@ -26,7 +26,7 @@ const createNotification = async(userId, jobId, message)=>{
     })
 }
 
-const readNotification = async(req, res, next)=>{
+const readNotification = async(req, res, next)=>{// client, teknisi
     try {
         const {notificationId} = req.params
         const notification = await notificationCollection.findById(notificationId)
@@ -44,7 +44,7 @@ const readNotification = async(req, res, next)=>{
     }
 }
 
-const deleteNotification = async(req, res, next)=>{
+const deleteNotification = async(req, res, next)=>{// client, teknisi
     try {
         const {notificationId} = req.params
         await notificationCollection.findByIdAndDelete(notificationId)

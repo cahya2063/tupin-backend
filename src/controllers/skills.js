@@ -1,6 +1,6 @@
 import SkillCollection from "../models/skills.js"
 
-const getAllSkills = async(req, res, next)=>{
+const getAllSkills = async(req, res, next)=>{// client
     try {
         const data = await SkillCollection.find({})
         res.status(200).json({

@@ -4,7 +4,7 @@ import updateProfileValidation from "../validation/profile.js"
 const ObjectId = mongoose.Types.ObjectId
 
 
-const getProfile = async (req, res, next) => {
+const getProfile = async (req, res, next) => {// client, teknisi
     try {
         const { id } = req.params
         const user = await userCollection
@@ -18,7 +18,7 @@ const getProfile = async (req, res, next) => {
         next(error)
     }
 }
-const updateProfile = async (req, res, next)=>{
+const updateProfile = async (req, res, next)=>{// client, teknisi
     try {        
         const {id} = req.params
         
@@ -49,7 +49,7 @@ const updateProfile = async (req, res, next)=>{
     
 }
 
-const updateAvatar = async (req, res, next) => {
+const updateAvatar = async (req, res, next) => {// client, teknisi
   try {
     const { id } = req.params;
 

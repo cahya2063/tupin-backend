@@ -6,7 +6,7 @@ import { createNotification } from "./notification.js";
 
 const ObjectId = mongoose.Types.ObjectId
 
-const getAllJob = async (req, res)=>{
+const getAllJob = async (req, res)=>{// teknisi
   try {
     const data = await jobsCollection.find({})
     res.status(200).json({
@@ -20,7 +20,7 @@ const getAllJob = async (req, res)=>{
   }
 }
 
-const getDetailJob = async (req, res, next)=>{
+const getDetailJob = async (req, res, next)=>{// teknisi, client
   try {
     const {id} = req.params
     const job = await jobsCollection.findOne({_id: new ObjectId(id)})
@@ -55,7 +55,7 @@ const getJobByUser = async (req, res, next)=>{ // client
   }
 }
 
-const getAcceptedJob = async(req, res, next)=>{
+const getAcceptedJob = async(req, res, next)=>{// teknisi
   try {
     const {technicianId} = req.params
     const jobs = await jobsCollection.find({selectedTechnician: technicianId})
@@ -105,8 +105,8 @@ const addJob = async (req, res) => { // client
 };
 const applyJob = async (req, res, next) => { // technician
   try {
-    const { jobId } = req.params;        // ambil id job dari URL
-    const { userId } = req.body;         // ambil id user dari body (atau req.user dari authMiddleware)
+    const { jobId } = req.params;
+    const { userId } = req.body;
     console.log('jobId:', jobId, 'userId:', userId);
     
 
@@ -134,7 +134,7 @@ const applyJob = async (req, res, next) => { // technician
   }
 };
 
-const chooseTechnician = async (req, res, next) => {
+const chooseTechnician = async (req, res, next) => {// client
   try {
     const { jobId } = req.params;
     let { technicianId } = req.body;
@@ -175,7 +175,7 @@ const chooseTechnician = async (req, res, next) => {
   }
 };
 
-const technicianRequest = async(req, res, next)=>{
+const technicianRequest = async(req, res, next)=>{// teknisi
   try {
     
     const {jobId} = req.params    
@@ -237,7 +237,7 @@ const approveJobRequest = async(req, res, next)=>{// client
     })
 }
 
-const doneJob = async(req, res, next)=>{
+const doneJob = async(req, res, next)=>{// teknisi
   const {jobId} = req.params
   const job = await jobsCollection.findOne({
     _id: jobId,
@@ -266,7 +266,7 @@ const doneJob = async(req, res, next)=>{
       message: 'berhasil menyelesaikan job'
     })
 }
-const isJobCompleted = async(req, res, next)=>{
+const isJobCompleted = async(req, res, next)=>{// client
   try {
     const {jobId} = req.params
     const {status} = req.body
@@ -321,7 +321,7 @@ const isJobCompleted = async(req, res, next)=>{
   }
   
 }
-const cancelJobs = async (req, res, next)=>{
+const cancelJobs = async (req, res, next)=>{// teknisi, client
   try {
     
     const {jobId} = req.params
