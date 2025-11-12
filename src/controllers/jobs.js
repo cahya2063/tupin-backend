@@ -85,6 +85,7 @@ const addJob = async (req, res) => { // client
       deadline: JSON.parse(data.deadline || "{}"), // kalau deadline dikirim json
       experiences: data.experiences,
       budget: data.budget,
+      paymentMethod: data.payment_method,
       description: data.description,
       photo: req.file ? req.file.filename : null, // ambil nama file
       invites: JSON.parse(data.invites || "[]"),
