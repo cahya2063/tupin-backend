@@ -120,6 +120,7 @@ const applyJob = async (req, res, next) => { // technician
       jobId,
       { $addToSet: { invites: userId } }, // $addToSet agar tidak duplikat
       { new: true }
+      
     );
 
     if (!updatedJob) {
