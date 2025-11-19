@@ -261,12 +261,12 @@ const doneJob = async(req, res, next)=>{// teknisi
   // buat notifikasi client
   createNotification(client.id, jobId, `teknisi ${technician.nama} sudah menyelesaikan ${job.title} konfirmasi pada kami jika alatmu sudah selesai`)
 
-    // buat notifikasi teknisi
-    createNotification(technician.id, jobId, `tunggu client mengkonfirmasi jika ${job.title} sudah selesai`)
+  // buat notifikasi teknisi
+  createNotification(technician.id, jobId, `tunggu client mengkonfirmasi jika ${job.title} sudah selesai`)
 
-    res.status(200).json({
-      message: 'berhasil menyelesaikan job'
-    })
+  res.status(200).json({
+    message: 'berhasil menyelesaikan job'
+  })
 }
 const isJobCompleted = async(req, res, next)=>{// client
   try {

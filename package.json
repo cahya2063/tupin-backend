@@ -23,6 +23,7 @@
     "express-flash": "^0.0.2",
     "express-session": "^1.18.2",
     "jsonwebtoken": "^9.0.2",
+    "midtrans-client": "^1.4.3",
     "mongodb": "^6.18.0",
     "mongoose": "^8.16.5",
     "multer": "^2.0.2",
