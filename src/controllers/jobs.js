@@ -1,6 +1,5 @@
 import mongoose from "mongoose";
 import jobsCollection from "../models/jobs.js";
-import notificationCollection from "../models/notification.js";
 import userCollection from "../models/users.js"
 import { createNotification } from "./notification.js";
 
@@ -383,9 +382,3 @@ export {
   isJobCompleted,
   cancelJobs
 }
-
-
-
-
-
-

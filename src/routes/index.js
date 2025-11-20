@@ -10,6 +10,7 @@ import notificationRouter from './notification.js';
 import chatRouter from './chat.js';
 import messageRouter from './message.js';
 import reviewRouter from './review.js';
+import paymentRouter from './payment.js';
 const routes = express.Router();
 
 routes.post('/signup', postSignup);
@@ -21,6 +22,7 @@ routes.use('/notifications', authMiddleware, notificationRouter)
 routes.use('/chats', authMiddleware, chatRouter)
 routes.use('/messages', authMiddleware, messageRouter)
 routes.use('/review', authMiddleware, reviewRouter)
+routes.use('/payment', authMiddleware, paymentRouter)
 routes.get('/', (req, res) => {
   res.json({
     message: 'Hello World'
