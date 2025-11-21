@@ -1,12 +1,12 @@
 import midtransClient from 'midtrans-client';
-
+import { createSubAccountRequest } from '../services/xendit.service.js'
 // Create Snap API instance
 let snap = new midtransClient.Snap({
   isProduction: false,
   serverKey: process.env.MIDTRANS_SERVER_KEY,
 });
 
-const createTransactionGateway = async (req, res) => {
+const createTransactionGateway = async (req, res) => { // midtrans
   try {
 
     console.log("SERVER KEY :", process.env.MIDTRANS_SERVER_KEY);
@@ -49,6 +49,23 @@ const createTransactionCash = async(req, res)=>{ // client
     }
 }
 
+const createSubAccount = async(req, res)=>{// xendit
+  try {
+    const body = {
+      business_name: req.body.business_name,
+      business_email: req.body.business_email,
+      type: req.body.type || 'OWNED'
+    }
+
+    const data = await createSubAccountRequest(body)
+    return res.json({ success: true, data });
+  } catch (error) {
+    console.error(error.response?.data || error.message);
+    return res.status(500).json({ success:false, message: error.response?.data || error.message });
+  }
+}
+
 export {
     createTransactionGateway,
+    createSubAccount
 }
