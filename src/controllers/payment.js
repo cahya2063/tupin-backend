@@ -52,10 +52,12 @@ const createTransactionCash = async(req, res)=>{ // client
 const createSubAccount = async(req, res)=>{// xendit
   try {
     const body = {
-      business_name: req.body.business_name,
-      business_email: req.body.business_email,
-      type: req.body.type || 'OWNED'
-    }
+      type: req.body.type || "OWNED",
+      email: req.body.business_email,
+      public_profile: {
+        business_name: req.body.business_name
+      }
+    };
 
     const data = await createSubAccountRequest(body)
     return res.json({ success: true, data });
