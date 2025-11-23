@@ -1,5 +1,5 @@
 import midtransClient from 'midtrans-client';
-import { createSplitRuleRequest, createSubAccountRequest } from '../services/xendit.service.js'
+import { createInvoiceRequest, createSplitRuleRequest, createSubAccountRequest } from '../services/xendit.service.js'
 // Create Snap API instance
 let snap = new midtransClient.Snap({
   isProduction: false,
@@ -86,8 +86,48 @@ const createSplitRule = async(req, res)=>{
   }
 }
 
+const createInvoiceWithSplit = async(req, res)=>{
+  try {
+    // console.log('request : ', req.body);
+    
+    const {amount, customer_email, split_rule_id} = req.body
+    const body = {
+      external_id: `inv-${Date.now()}`,
+      amount: amount,
+      payer_email: customer_email,
+      payment_methods_options: {
+        invoices: {
+          split_rule_id: split_rule_id
+        }
+      }
+    }
+    if(split_rule_id){
+      body.with_split_rule_id = split_rule_id
+    }
+
+    const response = await createInvoiceRequest(body)
+    console.log('invoice response : ', response);
+    
+    return res.status(201).json({
+      success: true,
+      invoice: response
+    })
+  } catch (error) {
+    console.error(error.response?.data || error.message);
+    return res.status(500).json({ success:false, message: error.response?.data || error.message });
+  }
+}
+
+const handleXenditWebhooks = async(req, res)=>{
+  console.log('xendit webhooks : ', req.body);
+  
+  res.status(200).send('OK')
+}
+
 export {
     createTransactionGateway,
     createSubAccount,
-    createSplitRule
+    createSplitRule,
+    createInvoiceWithSplit,
+    handleXenditWebhooks
 }

@@ -21,8 +21,21 @@ const createSplitRuleRequest = async(body)=>{
     return response.data
 }
 
+const createInvoiceRequest = async(body, options={})=>{
+    const config = {
+        headers: {}
+    }
+    if(options.forUserId){
+        config.headers['for-user-id'] = options.forUserId
+    }
+    const response = await client.post('/v2/invoices', body, config);
+    return response.data
+}
+
 
 export {
     createSubAccountRequest,
-    createSplitRuleRequest
+    createSplitRuleRequest,
+    createInvoiceRequest
+    
 }
