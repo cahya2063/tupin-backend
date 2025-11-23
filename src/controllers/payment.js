@@ -1,5 +1,5 @@
 import midtransClient from 'midtrans-client';
-import { createSubAccountRequest } from '../services/xendit.service.js'
+import { createSplitRuleRequest, createSubAccountRequest } from '../services/xendit.service.js'
 // Create Snap API instance
 let snap = new midtransClient.Snap({
   isProduction: false,
@@ -67,7 +67,27 @@ const createSubAccount = async(req, res)=>{// xendit
   }
 }
 
+const createSplitRule = async(req, res)=>{
+  try {
+    const body = {
+      name: req.body.name,
+      description: req.body.description,
+      routes: req.body.routes
+    }
+    const data = await createSplitRuleRequest(body)
+    return res.status(201).json({
+      success: true,
+      payment: data
+    })
+  } catch (error) {
+    console.error(error.response?.data || error.message);
+    return res.status(500).json({ success:false, message: error.response?.data || error.message });
+    
+  }
+}
+
 export {
     createTransactionGateway,
-    createSubAccount
+    createSubAccount,
+    createSplitRule
 }

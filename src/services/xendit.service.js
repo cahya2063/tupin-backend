@@ -11,8 +11,18 @@ const client = axios.create({
 
 const createSubAccountRequest = async(body)=>{
     const response = await client.post('/v2/accounts', body);
-    console.log('response : ', response);
+    // console.log('response : ', response);
     
     return response.data
 }
-export {createSubAccountRequest}
+
+const createSplitRuleRequest = async(body)=>{
+    const response = await client.post('/split_rules', body);
+    return response.data
+}
+
+
+export {
+    createSubAccountRequest,
+    createSplitRuleRequest
+}
