@@ -1,10 +1,21 @@
 import midtransClient from 'midtrans-client';
-import { createInvoiceRequest, createSplitRuleRequest, createSubAccountRequest } from '../services/xendit.service.js'
+import { createDynamicSplitRule, createInvoiceRequest, createSplitRuleRequest, createSubAccountRequest } from '../services/xendit.service.js'
+import axios from "axios";
 // Create Snap API instance
 let snap = new midtransClient.Snap({
   isProduction: false,
   serverKey: process.env.MIDTRANS_SERVER_KEY,
 });
+
+const baseUrl = process.env.XENDIT_API_BASE;
+const auth = {
+    username: process.env.XENDIT_SECRET_KEY,
+}
+
+const client = axios.create({
+    baseURL: baseUrl,
+    auth: auth,
+})
 
 const createTransactionGateway = async (req, res) => { // midtrans
   try {
@@ -52,7 +63,7 @@ const createTransactionCash = async(req, res)=>{ // client
 const createSubAccount = async(req, res)=>{// xendit
   try {
     const body = {
-      type: req.body.type || "OWNED",
+      type: req.body.type || "MANAGED",
       email: req.body.business_email,
       public_profile: {
         business_name: req.body.business_name
@@ -67,62 +78,70 @@ const createSubAccount = async(req, res)=>{// xendit
   }
 }
 
-const createSplitRule = async(req, res)=>{
-  try {
-    const body = {
-      name: req.body.name,
-      description: req.body.description,
-      routes: req.body.routes
-    }
-    const data = await createSplitRuleRequest(body)
-    return res.status(201).json({
-      success: true,
-      payment: data
-    })
-  } catch (error) {
-    console.error(error.response?.data || error.message);
-    return res.status(500).json({ success:false, message: error.response?.data || error.message });
-    
-  }
+const createSplitRule = async(teknisiAccountId)=>{
+  const res = await client.post("/split_rules", {
+    name: "Split Teknisi dan Platform",
+    currency: "IDR",
+    routes: [
+      {
+        reference_id: `teknisi-${Date.now()}`,
+        destination_account_id: teknisiAccountId,
+        percent_amount: 95,
+        currency: "IDR"
+      },
+      {
+        reference_id: `platform-${Date.now()}`,
+        destination_account_id: process.env.PLATFORM_ACCOUNT_ID,
+        percent_amount: 5,
+        currency: "IDR"
+      }
+    ]
+  });
+
+  return res.data;
 }
 
-const createInvoiceWithSplit = async(req, res)=>{
+const createInvoiceWithSplit = async (req, res) => {
   try {
-    // console.log('request : ', req.body);
-    
-    const {amount, customer_email, split_rule_id} = req.body
-    const body = {
+    const { amount, teknisiAccountId, payer_email } = req.body;
+
+    // 1. Buat split rule
+    const splitRule = await createSplitRule(teknisiAccountId);
+
+    // 2. Buat invoice
+    const payload = {
       external_id: `inv-${Date.now()}`,
       amount: amount,
-      payer_email: customer_email,
-      payment_methods_options: {
-        invoices: {
-          split_rule_id: split_rule_id
-        }
-      }
-    }
-    if(split_rule_id){
-      body.with_split_rule_id = split_rule_id
-    }
+      payer_email: payer_email,
+      with_split_rule_id: splitRule.id
+    };
 
-    const response = await createInvoiceRequest(body)
-    console.log('invoice response : ', response);
-    
-    return res.status(201).json({
+    const invoice = await client.post("/v2/invoices", payload).then(r => r.data);
+
+    res.json({
       success: true,
-      invoice: response
-    })
-  } catch (error) {
-    console.error(error.response?.data || error.message);
-    return res.status(500).json({ success:false, message: error.response?.data || error.message });
-  }
-}
+      invoice
+    });
 
-const handleXenditWebhooks = async(req, res)=>{
-  console.log('xendit webhooks : ', req.body);
-  
-  res.status(200).send('OK')
-}
+  } catch (err) {
+    console.error(err.response?.data || err);
+    res.status(500).json(err.response?.data || err.message);
+  }
+};
+
+
+const handleXenditWebhooks = async (req, res) => {
+  try {
+    const payload = req.body;
+    // simpan payload ke logs DB
+    // jika payload.status === 'PAID' || payload.status === 'SETTLED' maka:
+    //   - update order di DB
+    //   - cek dashboard Xendit -> split applied
+    res.status(200).send('OK');
+  } catch (e) {
+    res.status(500).send('ERR');
+  }
+};
 
 export {
     createTransactionGateway,
