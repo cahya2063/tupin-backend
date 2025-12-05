@@ -21,6 +21,7 @@ const createSplitRuleRequest = async(body)=>{
     return response.data
 }
 
+
 const createInvoiceRequest = async(body, options={})=>{
     const config = {
         headers: {}
