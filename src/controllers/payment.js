@@ -60,93 +60,162 @@ const createTransactionCash = async(req, res)=>{ // client
     }
 }
 
-const createSubAccount = async(req, res)=>{// xendit
+// const createSubAccount = async(req, res)=>{// xendit
+//   try {
+//     const body = {
+//       type: req.body.type || "MANAGED",
+//       email: req.body.business_email,
+//       public_profile: {
+//         business_name: req.body.business_name
+//       }
+//     };
+
+//     const data = await createSubAccountRequest(body)
+//     return res.json({ success: true, data });
+//   } catch (error) {
+//     console.error(error.response?.data || error.message);
+//     return res.status(500).json({ success:false, message: error.response?.data || error.message });
+//   }
+// }
+
+// const createSplitRule = async () => {
+//   const res = await client.post("/v2/split_rules", {
+//     name: "platform-95-5",
+//     currency: "IDR",
+//     routes: [
+//       {
+//         reference_id: "teknisi",
+//         destination_account_id: "<SUB_ACCOUNT_ID>",
+//         percent_amount: 95
+//       },
+//       {
+//         reference_id: "platform",
+//         destination_account_id: process.env.PLATFORM_ACCOUNT_ID,
+//         percent_amount: 5
+//       }
+//     ]
+//   });
+
+//   console.log("SPLIT RULE CREATED:", res.data.id);
+//   return res.data;
+// };
+
+
+// const createInvoiceWithSplit = async (req, res) => {
+//   try {
+//     const { amount, payer_email, teknisiAccountId } = req.body;
+
+//     const payload = {
+//       external_id: `inv-${Date.now()}`,
+//       amount,
+//       payer_email,
+//       with_split_rule_id: process.env.DEFAULT_SPLIT_RULE_ID,
+
+//       // override route untuk transaksi ini
+//       routes: [
+//         {
+//           destination_account_id: teknisiAccountId,
+//           percent_amount: 95,
+//         },
+//         {
+//           destination_account_id: process.env.PLATFORM_ACCOUNT_ID,
+//           percent_amount: 5,
+//         }
+//       ]
+//     };
+
+//     const invoice = await client.post("/v2/invoices", payload)
+//                                 .then(r => r.data);
+
+//     return res.json({ success: true, invoice });
+
+//   } catch (err) {
+//     console.error(err.response?.data || err);
+//     res.status(500).json(err.response?.data || err.message);
+//   }
+// };
+
+
+// const handleXenditWebhooks = async (req, res) => {
+//   try {
+//     const payload = req.body;
+//     // simpan payload ke logs DB
+//     // jika payload.status === 'PAID' || payload.status === 'SETTLED' maka:
+//     //   - update order di DB
+//     //   - cek dashboard Xendit -> split applied
+//     res.status(200).send('OK');
+//   } catch (e) {
+//     res.status(500).send('ERR');
+//   }
+// };
+
+const createInvoice = async (req, res) => {
   try {
-    const body = {
-      type: req.body.type || "MANAGED",
-      email: req.body.business_email,
-      public_profile: {
-        business_name: req.body.business_name
-      }
-    };
+    const { amount, payer_email } = req.body;
 
-    const data = await createSubAccountRequest(body)
-    return res.json({ success: true, data });
-  } catch (error) {
-    console.error(error.response?.data || error.message);
-    return res.status(500).json({ success:false, message: error.response?.data || error.message });
-  }
-}
-
-const createSplitRule = async(teknisiAccountId)=>{
-  const res = await client.post("/split_rules", {
-    name: "Split Teknisi dan Platform",
-    currency: "IDR",
-    routes: [
-      {
-        reference_id: `teknisi-${Date.now()}`,
-        destination_account_id: teknisiAccountId,
-        percent_amount: 95,
-        currency: "IDR"
-      },
-      {
-        reference_id: `platform-${Date.now()}`,
-        destination_account_id: process.env.PLATFORM_ACCOUNT_ID,
-        percent_amount: 5,
-        currency: "IDR"
-      }
-    ]
-  });
-
-  return res.data;
-}
-
-const createInvoiceWithSplit = async (req, res) => {
-  try {
-    const { amount, teknisiAccountId, payer_email } = req.body;
-
-    // 1. Buat split rule
-    const splitRule = await createSplitRule(teknisiAccountId);
-
-    // 2. Buat invoice
     const payload = {
       external_id: `inv-${Date.now()}`,
-      amount: amount,
-      payer_email: payer_email,
-      with_split_rule_id: splitRule.id
+      amount,
+      payer_email
     };
 
-    const invoice = await client.post("/v2/invoices", payload).then(r => r.data);
+    const invoice = await client.post('/v2/invoices', payload)
+      .then(r => r.data);
 
-    res.json({
-      success: true,
-      invoice
-    });
+    return res.json({ success: true, invoice });
 
-  } catch (err) {
-    console.error(err.response?.data || err);
-    res.status(500).json(err.response?.data || err.message);
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
   }
 };
 
 
+// =========================
+// XENDIT WEBHOOK → TRANSFER 95%
+// =========================
 const handleXenditWebhooks = async (req, res) => {
   try {
-    const payload = req.body;
-    // simpan payload ke logs DB
-    // jika payload.status === 'PAID' || payload.status === 'SETTLED' maka:
-    //   - update order di DB
-    //   - cek dashboard Xendit -> split applied
-    res.status(200).send('OK');
-  } catch (e) {
-    res.status(500).send('ERR');
+    const event = req.body;
+
+    if (event.status !== "PAID" && event.status !== "SETTLED") {
+      return res.status(200).send("ignored");
+    }
+
+    const externalId = event.external_id;
+    const amount = Number(event.amount);
+
+    const teknisiUserId = process.env.SUBACCOUNT_ACCOUNT_ID;     // ✔ WAJIB User ID
+    const sourceUserId = process.env.PLATFORM_ACCOUNT_ID;        // ✔ WAJIB User ID
+
+    const payoutAmount = Math.floor(amount * 0.95);
+
+    const payload = {
+      reference: `payout-${externalId}`,
+      amount: payoutAmount,
+      source_user_id: sourceUserId,
+      destination_user_id: teknisiUserId
+    };
+
+    const transfer = await client.post('/transfers', payload)
+      .then(r => r.data);
+
+    console.log("PAYOUT SUCCESS:", transfer);
+
+    return res.status(200).send("OK");
+
+  } catch (err) {
+    console.error("WEBHOOK ERROR:", err.response?.data || err.message);
+    return res.status(500).send("ERR");
   }
 };
+
 
 export {
     createTransactionGateway,
-    createSubAccount,
-    createSplitRule,
-    createInvoiceWithSplit,
+    createInvoice,
     handleXenditWebhooks
+    // createSubAccount,
+    // createSplitRule,
+    // createInvoiceWithSplit,
+    // handleXenditWebhooks
 }
