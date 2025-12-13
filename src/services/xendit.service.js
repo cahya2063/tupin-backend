@@ -25,6 +25,7 @@ const createSubAccountRequest = async(body)=>{
     return response.data
 }
 
+
 // const createSplitRuleRequest = async(body)=>{
 //     const response = await client.post('/split_rules', body);
 //     return response.data
