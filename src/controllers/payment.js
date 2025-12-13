@@ -1,6 +1,7 @@
 import midtransClient from 'midtrans-client';
-import { createDynamicSplitRule, createInvoiceRequest, createSplitRuleRequest, createSubAccountRequest } from '../services/xendit.service.js'
+// import { createDynamicSplitRule, createInvoiceRequest, createSplitRuleRequest, createSubAccountRequest } from '../services/xendit.service.js'
 import axios from "axios";
+import paymentCollection from '../models/payment.js';
 // Create Snap API instance
 let snap = new midtransClient.Snap({
   isProduction: false,
@@ -151,16 +152,38 @@ const createTransactionCash = async(req, res)=>{ // client
 
 const createInvoice = async (req, res) => {
   try {
-    const { amount, payer_email } = req.body;
+    const { 
+      amount, 
+      payer_email, 
+      subAccountId,
+      jobId,
+      payerId,
+      receiverId,
+     } = req.body;
+
+    const externalId = `inv-${Date.now()}`;
 
     const payload = {
-      external_id: `inv-${Date.now()}`,
+      external_id: externalId,
       amount,
       payer_email
     };
 
     const invoice = await client.post('/v2/invoices', payload)
       .then(r => r.data);
+
+      console.log('invoice : ', invoice);
+      
+    await paymentCollection.create({
+      externalId: externalId,
+      jobId: jobId,
+      payerId: payerId,
+      receiverId: receiverId,
+      subAccountId: subAccountId,
+      amount: amount,
+      status: invoice.status
+
+    })
 
     return res.json({ success: true, invoice });
 
@@ -177,17 +200,28 @@ const handleXenditWebhooks = async (req, res) => {
   try {
     const event = req.body;
 
-    if (event.status !== "PAID" && event.status !== "SETTLED") {
+    console.log('event : ', event);
+    
+
+    if (!["PAID", "SETTLED"].includes(event.status)) {
       return res.status(200).send("ignored");
     }
 
     const externalId = event.external_id;
-    const amount = Number(event.amount);
 
-    const teknisiUserId = process.env.SUBACCOUNT_ACCOUNT_ID;     // ✔ WAJIB User ID
+    // const amount = Number(event.amount);
+    const payment = await paymentCollection.findOne({
+      externalId: externalId,
+    })
+
+    if(!payment){
+      return res.status(404).send("Payment not found");
+    }
+
+    const teknisiUserId = payment.subAccountId;     // ✔ WAJIB User ID
     const sourceUserId = process.env.PLATFORM_ACCOUNT_ID;        // ✔ WAJIB User ID
 
-    const payoutAmount = Math.floor(amount * 0.95);
+    const payoutAmount = Math.floor(payment.amount * 0.95);
 
     const payload = {
       reference: `payout-${externalId}`,
@@ -198,6 +232,12 @@ const handleXenditWebhooks = async (req, res) => {
 
     const transfer = await client.post('/transfers', payload)
       .then(r => r.data);
+
+
+    payment.status = 'PAID';
+    payment.paymentMethod = event.payment_method;
+    payment.paymentChannel = event.payment_channel;
+    await payment.save();
 
     console.log("PAYOUT SUCCESS:", transfer);
 

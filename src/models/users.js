@@ -41,6 +41,10 @@ const logInSchema = new mongoos.Schema({
     type: String,   // simpan path atau filename
     required: false,
   },
+  subAccountId: {
+    type: String,
+    required: false
+  },
   role: {
     type: String,
     enum: ['technician', 'client', 'admin'], // daftar role yg valid

@@ -1,7 +1,7 @@
 import mongoos from "../utils/db.js";
 
 const paymentSchema = new mongoos.Schema({
-    paymentId: {
+    externalId: {
         type: String,
         required: true
     },
@@ -9,9 +9,17 @@ const paymentSchema = new mongoos.Schema({
         type: String,
         required: true
     },
-    userId: {
+    payerId: {
+        type: String,
+        required: true,
+    },
+    receiverId: {
         type: String,
         required: true
+    },
+    subAccountId: {
+        type: String,
+        required: false
     },
     amount: {
         type: Number,
@@ -19,13 +27,17 @@ const paymentSchema = new mongoos.Schema({
     },
     status: {
         type: String,
-        enum: ['pending', 'success', 'failed']
+        required: false
     },
-    paymentType: {
+    paymentMethod: {
         type: String,
         required: false
+    },
+    paymentChannel: {
+        type: String, 
+        required: false,
     }
 })
 
-const paymentCollection = new mongoos.model('payments', paymentSchema)
+const paymentCollection = mongoos.model('payments', paymentSchema)
 export default paymentCollection;

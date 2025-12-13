@@ -1,5 +1,5 @@
 import express from 'express';
-import { postSignup } from '../controllers/register.js';
+import { postSignupClient, postSignupTechncian } from '../controllers/register.js';
 import mongoos from '../utils/db.js';
 import authMiddleware from '../middleware/auth.js';
 import { postLogin } from '../controllers/login.js';
@@ -13,7 +13,8 @@ import reviewRouter from './review.js';
 import paymentRouter from './payment.js';
 const routes = express.Router();
 
-routes.post('/signup', postSignup);
+routes.post('/signup', postSignupClient);
+routes.post('/signup-tech', postSignupTechncian);
 routes.post('/signin', postLogin)
 routes.use('/profile', authMiddleware, profileRouter)
 routes.use('/jobs', authMiddleware, jobsRouter)
