@@ -2,6 +2,7 @@ import midtransClient from 'midtrans-client';
 // import { createDynamicSplitRule, createInvoiceRequest, createSplitRuleRequest, createSubAccountRequest } from '../services/xendit.service.js'
 import axios from "axios";
 import paymentCollection from '../models/payment.js';
+import { checkBalanceRequest, createInvoiceRequest, createTransferTehnicianRequest } from '../services/xendit.service.js';
 // Create Snap API instance
 let snap = new midtransClient.Snap({
   isProduction: false,
@@ -150,6 +151,22 @@ const createTransactionCash = async(req, res)=>{ // client
 //   }
 // };
 
+const checkBalance = async (req, res, next)=>{
+  try {
+    const {userId} = req.params;
+    
+    const balance = await checkBalanceRequest(userId);
+
+    console.log('balance : ', balance);
+    return res.status(200).json({
+      success: true,
+      data: balance
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
 const createInvoice = async (req, res) => {
   try {
     const { 
@@ -169,8 +186,7 @@ const createInvoice = async (req, res) => {
       payer_email
     };
 
-    const invoice = await client.post('/v2/invoices', payload)
-      .then(r => r.data);
+    const invoice = await createInvoiceRequest(payload)
 
       console.log('invoice : ', invoice);
       
@@ -230,16 +246,15 @@ const handleXenditWebhooks = async (req, res) => {
       destination_user_id: teknisiUserId
     };
 
-    const transfer = await client.post('/transfers', payload)
-      .then(r => r.data);
 
+    const transfers = await createTransferTehnicianRequest(payload)
 
     payment.status = 'PAID';
     payment.paymentMethod = event.payment_method;
     payment.paymentChannel = event.payment_channel;
     await payment.save();
 
-    console.log("PAYOUT SUCCESS:", transfer);
+    console.log("PAYOUT SUCCESS:", transfers);
 
     return res.status(200).send("OK");
 
@@ -253,7 +268,8 @@ const handleXenditWebhooks = async (req, res) => {
 export {
     createTransactionGateway,
     createInvoice,
-    handleXenditWebhooks
+    handleXenditWebhooks,
+    checkBalance
     // createSubAccount,
     // createSplitRule,
     // createInvoiceWithSplit,

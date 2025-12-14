@@ -25,7 +25,37 @@ const createSubAccountRequest = async(body)=>{
     return response.data
 }
 
+const checkBalanceRequest = async(userId)=>{
+  try {    
+    const response = await client.get('/balance', {
+      headers: {
+        'Content-Type': 'application/json',
+        'for-user-id': userId
+      }
+    })
+  
+    
+    // console.log('balance : ', response.data);
+    return response.data
+  } catch (error) {
+    console.log('error : ', error);
+    
+    
+  }
+  
+}
 
+const createInvoiceRequest = async(body)=>{
+  const response = await client.post('/v2/invoices', body);
+
+  return response.data
+}
+
+const createTransferTehnicianRequest = async(body)=>{
+  const response = await client.post('/transfers', body)
+
+  return response.data
+}
 // const createSplitRuleRequest = async(body)=>{
 //     const response = await client.post('/split_rules', body);
 //     return response.data
@@ -63,6 +93,9 @@ const createSubAccountRequest = async(body)=>{
 
 export {
     createSubAccountRequest,
+    createInvoiceRequest, 
+    createTransferTehnicianRequest,
+    checkBalanceRequest
     // createSplitRuleRequest,
     // createInvoiceRequest,
     // createDynamicSplitRule
