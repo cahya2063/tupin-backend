@@ -2,7 +2,8 @@ import midtransClient from 'midtrans-client';
 // import { createDynamicSplitRule, createInvoiceRequest, createSplitRuleRequest, createSubAccountRequest } from '../services/xendit.service.js'
 import axios from "axios";
 import paymentCollection from '../models/payment.js';
-import { checkBalanceRequest, createInvoiceRequest, createTransferTehnicianRequest } from '../services/xendit.service.js';
+import { checkBalanceRequest, createPayoutRequest, createSplitInvoicesRequest } from '../services/xendit.service.js';
+import userCollection from '../models/users.js';
 // Create Snap API instance
 let snap = new midtransClient.Snap({
   isProduction: false,
@@ -80,62 +81,71 @@ const createTransactionCash = async(req, res)=>{ // client
 //   }
 // }
 
-// const createSplitRule = async () => {
-//   const res = await client.post("/v2/split_rules", {
-//     name: "platform-95-5",
-//     currency: "IDR",
-//     routes: [
-//       {
-//         reference_id: "teknisi",
-//         destination_account_id: "<SUB_ACCOUNT_ID>",
-//         percent_amount: 95
-//       },
-//       {
-//         reference_id: "platform",
-//         destination_account_id: process.env.PLATFORM_ACCOUNT_ID,
-//         percent_amount: 5
-//       }
-//     ]
-//   });
+const createSplitRule = async (req, res) => {
+  try {
+    
+    const response = await client.post("/split_rules", {
+      name: "split rule platform dan teknisi",
+      description: "Platform fee and delivery fee for a Marketplace",
+      routes: [
+        {
+          percent_amount: 95,
+          currency: "IDR",
+          destination_account_id: req.body.subAccountId,
+          reference_id: "reference-1"
+        },
+        {
+          percent_amount: 5,
+          currency: "IDR",
+          destination_account_id: process.env.PLATFORM_ACCOUNT_ID,
+          reference_id: "reference-2"
+        }
+      ]
+    });
+    
+  
+    console.log("SPLIT RULE CREATED:", response.data.id);
+    return res.json({ success: true, data: response.data });
+  } catch (error) {
+    console.log('error : ', error);
+    
+  }
+};
 
-//   console.log("SPLIT RULE CREATED:", res.data.id);
-//   return res.data;
-// };
 
+const createInvoiceWithSplit = async (req, res) => {
+  try {
+    const { subAccountId, amount, payer_email } = req.body;
+    const externalId = `inv-${Date.now()}`
+    const technician = await userCollection.findOne({
+      subAccountId: subAccountId
+    });
+    if (!technician) {
+      return res.status(404).json({
+        success: false,
+        message: "Teknisi dengan subAccountId tersebut tidak ditemukan",
+      });
+    }
+    
 
-// const createInvoiceWithSplit = async (req, res) => {
-//   try {
-//     const { amount, payer_email, teknisiAccountId } = req.body;
+    const payload = {
+      external_id: externalId,
+      split_rule_id: technician.split_rule_id,
+      subAccountId: subAccountId,
+      amount,
+      payer_email,
+      description: "Pembayaran jasa servis"
+    }
+    const response = await createSplitInvoicesRequest(payload)
+    console.log('berhasil membayar : ', response);
+    
+    return res.status(200).json({ success: true, invoices: response });
 
-//     const payload = {
-//       external_id: `inv-${Date.now()}`,
-//       amount,
-//       payer_email,
-//       with_split_rule_id: process.env.DEFAULT_SPLIT_RULE_ID,
-
-//       // override route untuk transaksi ini
-//       routes: [
-//         {
-//           destination_account_id: teknisiAccountId,
-//           percent_amount: 95,
-//         },
-//         {
-//           destination_account_id: process.env.PLATFORM_ACCOUNT_ID,
-//           percent_amount: 5,
-//         }
-//       ]
-//     };
-
-//     const invoice = await client.post("/v2/invoices", payload)
-//                                 .then(r => r.data);
-
-//     return res.json({ success: true, invoice });
-
-//   } catch (err) {
-//     console.error(err.response?.data || err);
-//     res.status(500).json(err.response?.data || err.message);
-//   }
-// };
+  } catch (err) {
+    console.error(err.response?.data || err);
+    res.status(500).json(err.response?.data || err.message);
+  }
+};
 
 
 // const handleXenditWebhooks = async (req, res) => {
@@ -155,106 +165,146 @@ const checkBalance = async (req, res, next)=>{
   try {
     const {userId} = req.params;
     
-    const balance = await checkBalanceRequest(userId);
+    const response = await checkBalanceRequest(userId);
 
-    console.log('balance : ', balance);
+    console.log('balance : ', response);
     return res.status(200).json({
       success: true,
-      data: balance
+      balance : response.balance
     })
   } catch (error) {
     next(error)
   }
 }
 
-const createInvoice = async (req, res) => {
-  try {
-    const { 
-      amount, 
-      payer_email, 
-      subAccountId,
-      jobId,
-      payerId,
-      receiverId,
-     } = req.body;
+// const createInvoice = async (req, res) => {
+//   try {
+//     const { 
+//       amount, 
+//       payer_email, 
+//       subAccountId,
+//       jobId,
+//       payerId,
+//       receiverId,
+//      } = req.body;
 
-    const externalId = `inv-${Date.now()}`;
+//     const externalId = `inv-${Date.now()}`;
+
+//     const payload = {
+//       external_id: externalId,
+//       amount,
+//       payer_email
+//     };
+
+//     const invoice = await createInvoiceRequest(payload)
+
+//       console.log('invoice : ', invoice);
+      
+//     await paymentCollection.create({
+//       externalId: externalId,
+//       jobId: jobId,
+//       payerId: payerId,
+//       receiverId: receiverId,
+//       subAccountId: subAccountId,
+//       amount: amount,
+//       status: invoice.status
+
+//     })
+
+//     return res.json({ success: true, invoice });
+
+//   } catch (error) {
+//     return res.status(500).json({ error: error.message });
+//   }
+// };
+
+const createPayout = async(req, res)=>{
+  try {
+    const {technicianId, amount}= req.body
+    const referenceId = `payout-${Date.now()}`
+
+    const technician = await userCollection.findById(technicianId)
+    if(!technician || !technician.subAccountId){
+      return res.status(404).json({
+        success: false,
+        message: 'Teknisi tidak ditemukan atau belum memiliki sub account'
+      })
+    }
 
     const payload = {
-      external_id: externalId,
-      amount,
-      payer_email
-    };
-
-    const invoice = await createInvoiceRequest(payload)
-
-      console.log('invoice : ', invoice);
-      
-    await paymentCollection.create({
-      externalId: externalId,
-      jobId: jobId,
-      payerId: payerId,
-      receiverId: receiverId,
-      subAccountId: subAccountId,
+      reference_id: referenceId,
+      subAccountId: technician.subAccountId,
+      channel_code: technician.bank_name,
+      channel_properties: {
+        account_number: technician.account_number,
+        account_holder_name: technician.nama
+      },
       amount: amount,
-      status: invoice.status
+      description: `Payout untuk teknisi ${technician.nama}`,
+      currency: "IDR"
+    }
 
+    const response = await createPayoutRequest(payload)
+    
+    return res.status(200).json({
+      success: true,
+      payout: response
     })
-
-    return res.json({ success: true, invoice });
-
+    
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    console.log(error);
+    
   }
-};
+}
+
 
 
 // =========================
 // XENDIT WEBHOOK → TRANSFER 95%
 // =========================
-const handleXenditWebhooks = async (req, res) => {
+const handleXenditWebhooksInvoices = async (req, res) => {
   try {
-    const event = req.body;
+    // const event = req.body;
 
-    console.log('event : ', event);
+    // console.log('event : ', event);
     
 
-    if (!["PAID", "SETTLED"].includes(event.status)) {
-      return res.status(200).send("ignored");
-    }
+    // if (!["PAID", "SETTLED"].includes(event.status)) {
+    //   return res.status(200).send("ignored");
+    // }
 
-    const externalId = event.external_id;
+    // const externalId = event.external_id;
 
-    // const amount = Number(event.amount);
-    const payment = await paymentCollection.findOne({
-      externalId: externalId,
-    })
+    // // const amount = Number(event.amount);
+    // const payment = await paymentCollection.findOne({
+    //   externalId: externalId,
+    // })
 
-    if(!payment){
-      return res.status(404).send("Payment not found");
-    }
+    // if(!payment){
+    //   return res.status(404).send("Payment not found");
+    // }
 
-    const teknisiUserId = payment.subAccountId;     // ✔ WAJIB User ID
-    const sourceUserId = process.env.PLATFORM_ACCOUNT_ID;        // ✔ WAJIB User ID
+    // const teknisiUserId = payment.subAccountId;     // ✔ WAJIB User ID
+    // const sourceUserId = process.env.PLATFORM_ACCOUNT_ID;        // ✔ WAJIB User ID
 
-    const payoutAmount = Math.floor(payment.amount * 0.95);
+    // const payoutAmount = Math.floor(payment.amount * 0.95);
 
-    const payload = {
-      reference: `payout-${externalId}`,
-      amount: payoutAmount,
-      source_user_id: sourceUserId,
-      destination_user_id: teknisiUserId
-    };
+    // const payload = {
+    //   reference: `payout-${externalId}`,
+    //   amount: payoutAmount,
+    //   source_user_id: sourceUserId,
+    //   destination_user_id: teknisiUserId
+    // };
 
 
-    const transfers = await createTransferTehnicianRequest(payload)
+    // const transfers = await createTransferTehnicianRequest(payload)
 
-    payment.status = 'PAID';
-    payment.paymentMethod = event.payment_method;
-    payment.paymentChannel = event.payment_channel;
-    await payment.save();
+    // payment.status = 'PAID';
+    // payment.paymentMethod = event.payment_method;
+    // payment.paymentChannel = event.payment_channel;
+    // await payment.save();
 
-    console.log("PAYOUT SUCCESS:", transfers);
+    // console.log("PAYOUT SUCCESS:", transfers);
 
     return res.status(200).send("OK");
 
@@ -267,11 +317,12 @@ const handleXenditWebhooks = async (req, res) => {
 
 export {
     createTransactionGateway,
-    createInvoice,
-    handleXenditWebhooks,
-    checkBalance
+    checkBalance,
+    // createInvoice,
+    createPayout,
+    handleXenditWebhooksInvoices,
     // createSubAccount,
-    // createSplitRule,
-    // createInvoiceWithSplit,
+    createSplitRule,
+    createInvoiceWithSplit,
     // handleXenditWebhooks
 }
