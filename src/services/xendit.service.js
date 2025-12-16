@@ -56,6 +56,31 @@ const createTransferTehnicianRequest = async(body)=>{
 
   return response.data
 }
+
+const createPayoutRequest = async(body)=>{
+  try {
+    
+    const {reference_id, subAccountId} = body
+    
+    
+    const response = await client.post('/v2/payouts', 
+      body,
+      {
+        headers: {
+          'idempotency-key': reference_id,
+          'for-user-id': subAccountId
+        },
+      }
+    )
+  
+    return response.data
+  } catch (error) {
+    console.log('error : ', error);
+    
+  }
+}
+
+
 // const createSplitRuleRequest = async(body)=>{
 //     const response = await client.post('/split_rules', body);
 //     return response.data
@@ -90,12 +115,29 @@ const createTransferTehnicianRequest = async(body)=>{
 //   return res.data;
 // };
 
+const createSplitInvoicesRequest = async(body)=>{
+  const response = await client.post(`/v2/invoices`, 
+    body, 
+    {
+      headers:{
+        'with-split-rule': body.split_rule_id,
+        // 'api-version': '2024-11-11',
+        'for-user-id': body.subAccountId
+      }
+    })
+    console.log('response : ', response);
+    return response.data
+
+    
+}
 
 export {
     createSubAccountRequest,
     createInvoiceRequest, 
     createTransferTehnicianRequest,
-    checkBalanceRequest
+    checkBalanceRequest,
+    createPayoutRequest,
+    createSplitInvoicesRequest
     // createSplitRuleRequest,
     // createInvoiceRequest,
     // createDynamicSplitRule

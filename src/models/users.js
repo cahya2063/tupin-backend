@@ -50,6 +50,18 @@ const logInSchema = new mongoos.Schema({
     enum: ['technician', 'client', 'admin'], // daftar role yg valid
     default: 'client',                     // default role
   },
+  split_rule_id: {
+    type: String,
+    required: false
+  },
+  bank_name: {
+    type: String,
+    required: false
+  },
+  account_number: {
+    type: String,
+    required: false
+  }
 });
 
 const userCollection = mongoos.model('users', logInSchema);
