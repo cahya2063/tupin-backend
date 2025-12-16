@@ -2,8 +2,9 @@ import midtransClient from 'midtrans-client';
 // import { createDynamicSplitRule, createInvoiceRequest, createSplitRuleRequest, createSubAccountRequest } from '../services/xendit.service.js'
 import axios from "axios";
 import paymentCollection from '../models/payment.js';
-import { checkBalanceRequest, createPayoutRequest, createSplitInvoicesRequest } from '../services/xendit.service.js';
+import { checkBalanceRequest, createPayoutRequest, createSplitInvoicesRequest, getPayoutsChannels } from '../services/xendit.service.js';
 import userCollection from '../models/users.js';
+import payoutCollection from '../models/payout.js';
 // Create Snap API instance
 let snap = new midtransClient.Snap({
   isProduction: false,
@@ -63,35 +64,18 @@ const createTransactionCash = async(req, res)=>{ // client
     }
 }
 
-// const createSubAccount = async(req, res)=>{// xendit
-//   try {
-//     const body = {
-//       type: req.body.type || "MANAGED",
-//       email: req.body.business_email,
-//       public_profile: {
-//         business_name: req.body.business_name
-//       }
-//     };
 
-//     const data = await createSubAccountRequest(body)
-//     return res.json({ success: true, data });
-//   } catch (error) {
-//     console.error(error.response?.data || error.message);
-//     return res.status(500).json({ success:false, message: error.response?.data || error.message });
-//   }
-// }
-
-const createSplitRule = async (req, res) => {
+const createSplitRule = async (subAccountId) => { // teknisi register
   try {
     
     const response = await client.post("/split_rules", {
       name: "split rule platform dan teknisi",
-      description: "Platform fee and delivery fee for a Marketplace",
+      description: "pembagian pembayaran antara teknisi dan platform",
       routes: [
         {
           percent_amount: 95,
           currency: "IDR",
-          destination_account_id: req.body.subAccountId,
+          destination_account_id: subAccountId,
           reference_id: "reference-1"
         },
         {
@@ -105,7 +89,7 @@ const createSplitRule = async (req, res) => {
     
   
     console.log("SPLIT RULE CREATED:", response.data.id);
-    return res.json({ success: true, data: response.data });
+    return response.data;
   } catch (error) {
     console.log('error : ', error);
     
@@ -114,9 +98,9 @@ const createSplitRule = async (req, res) => {
 
 
 
-const createInvoiceWithSplit = async (req, res) => {
+const createInvoiceWithSplit = async (req, res) => { // client
   try {
-    const { subAccountId, amount, payer_email } = req.body;
+    const { subAccountId, amount, payer_email, jobId, payerId, receiverId } = req.body;
     const externalId = `inv-${Date.now()}`
     const technician = await userCollection.findOne({
       subAccountId: subAccountId
@@ -137,38 +121,40 @@ const createInvoiceWithSplit = async (req, res) => {
       payer_email,
       description: "Pembayaran jasa servis"
     }
-    const response = await createSplitInvoicesRequest(payload)
-    console.log('berhasil membayar : ', response);
+    const invoice = await createSplitInvoicesRequest(payload)
+    // console.log('berhasil membayar : ', invoice);
+
+
+    // simpan record pembayaran di DB
+    await paymentCollection.create({
+      externalId: externalId,
+      jobId: jobId,
+      payerId: payerId,
+      receiverId: receiverId,
+      subAccountId: subAccountId,
+      amount: invoice.amount,
+      status: invoice.status
+
+    })
     
-    return res.status(200).json({ success: true, invoices: response });
+    return res.status(200).json({ success: true, invoices: invoice });
 
   } catch (err) {
-    console.error(err.response?.data || err);
-    res.status(500).json(err.response?.data || err.message);
+    console.error(err.invoice?.data || err);
+    res.status(500).json(err.invoice?.data || err.message);
   }
 };
 
 
-// const handleXenditWebhooks = async (req, res) => {
-//   try {
-//     const payload = req.body;
-//     // simpan payload ke logs DB
-//     // jika payload.status === 'PAID' || payload.status === 'SETTLED' maka:
-//     //   - update order di DB
-//     //   - cek dashboard Xendit -> split applied
-//     res.status(200).send('OK');
-//   } catch (e) {
-//     res.status(500).send('ERR');
-//   }
-// };
 
-const checkBalance = async (req, res, next)=>{
+
+const checkBalance = async (req, res, next)=>{ // teknisi
   try {
-    const {userId} = req.params;
+    const {subAccountId} = req.params;
     
-    const response = await checkBalanceRequest(userId);
+    const response = await checkBalanceRequest(subAccountId);
 
-    console.log('balance : ', response);
+    // console.log('balance : ', response);
     return res.status(200).json({
       success: true,
       balance : response.balance
@@ -178,52 +164,17 @@ const checkBalance = async (req, res, next)=>{
   }
 }
 
-// const createInvoice = async (req, res) => {
-//   try {
-//     const { 
-//       amount, 
-//       payer_email, 
-//       subAccountId,
-//       jobId,
-//       payerId,
-//       receiverId,
-//      } = req.body;
 
-//     const externalId = `inv-${Date.now()}`;
 
-//     const payload = {
-//       external_id: externalId,
-//       amount,
-//       payer_email
-//     };
-
-//     const invoice = await createInvoiceRequest(payload)
-
-//       console.log('invoice : ', invoice);
-      
-//     await paymentCollection.create({
-//       externalId: externalId,
-//       jobId: jobId,
-//       payerId: payerId,
-//       receiverId: receiverId,
-//       subAccountId: subAccountId,
-//       amount: amount,
-//       status: invoice.status
-
-//     })
-
-//     return res.json({ success: true, invoice });
-
-//   } catch (error) {
-//     return res.status(500).json({ error: error.message });
-//   }
-// };
-
-const createPayout = async(req, res)=>{
+const createPayout = async(req, res)=>{// teknisi
   try {
-    const {technicianId, amount}= req.body
+    
+    const {technicianId, amount, channelName}= req.body
     const referenceId = `payout-${Date.now()}`
+    const channelCode = `ID_${channelName}`
+    console.log(`debug payout : ${technicianId}, ${amount}, ${channelCode}`);
 
+    
     const technician = await userCollection.findById(technicianId)
     if(!technician || !technician.subAccountId){
       return res.status(404).json({
@@ -232,10 +183,36 @@ const createPayout = async(req, res)=>{
       })
     }
 
+    
+    const paymentChannels = await getPayoutsChannels(channelCode)
+    console.log('payment channels : ',paymentChannels);
+
+    let minimumLimits = paymentChannels[0].amount_limits.minimum
+    let maximumLimits = paymentChannels[0].amount_limits.maximum
+
+    if(amount < minimumLimits || amount > maximumLimits){
+      return res.status(200).json({
+        success: false,
+        minimumLimits,
+        maximumLimits,
+        message: `minimum nilai transaksi adalah Rp ${minimumLimits} dan maksimal Rp ${maximumLimits}`
+      })
+    }
+    
+    const technicianBalance = await checkBalanceRequest(technician.subAccountId)
+    // console.log('technician balance : ', technicianBalance.balance);
+    
+    if(technicianBalance.balance < amount){
+      return res.status(200).json({
+        success: false,
+        message: 'saldo tidak mencukupi'
+      })
+    }
+    
     const payload = {
       reference_id: referenceId,
       subAccountId: technician.subAccountId,
-      channel_code: technician.bank_name,
+      channel_code: paymentChannels[0].channel_code,
       channel_properties: {
         account_number: technician.account_number,
         account_holder_name: technician.nama
@@ -245,11 +222,23 @@ const createPayout = async(req, res)=>{
       currency: "IDR"
     }
 
-    const response = await createPayoutRequest(payload)
+    const payout = await createPayoutRequest(payload)
+    console.log('payout : ', payout);
+
+    payoutCollection.create({
+      payoutId: payout.id,
+      amount: payout.amount,
+      channelCode: payout.channel_code,
+      currency: payout.currency,
+      referenceId: payout.reference_id,
+      status: payout.status
+    })
+
     
     return res.status(200).json({
       success: true,
-      payout: response
+      message: 'berhasil melakukan penarikan saldo',
+      payout: payout.data
     })
     
   } catch (error) {
@@ -263,68 +252,55 @@ const createPayout = async(req, res)=>{
 // =========================
 // XENDIT WEBHOOK → TRANSFER 95%
 // =========================
-const handleXenditWebhooksInvoices = async (req, res) => {
+const handleXenditWebhooksInvoices = async (req, res) => {// xendit execution
   try {
-    // const event = req.body;
+    const event = req.body;
 
-    // console.log('event : ', event);
+    console.log('event : ', event);
     
 
-    // if (!["PAID", "SETTLED"].includes(event.status)) {
-    //   return res.status(200).send("ignored");
-    // }
+    const externalId = event.data.payment_reference_id;
 
-    // const externalId = event.external_id;
+    // const amount = Number(event.amount);
+    const payment = await paymentCollection.findOne({
+      externalId: externalId,
+    })
 
-    // // const amount = Number(event.amount);
-    // const payment = await paymentCollection.findOne({
-    //   externalId: externalId,
-    // })
+    if(!payment){
+      return res.status(404).send("Payment not found");
+    }
 
-    // if(!payment){
-    //   return res.status(404).send("Payment not found");
-    // }
+    payment.status = event.data.status;
 
-    // const teknisiUserId = payment.subAccountId;     // ✔ WAJIB User ID
-    // const sourceUserId = process.env.PLATFORM_ACCOUNT_ID;        // ✔ WAJIB User ID
-
-    // const payoutAmount = Math.floor(payment.amount * 0.95);
-
-    // const payload = {
-    //   reference: `payout-${externalId}`,
-    //   amount: payoutAmount,
-    //   source_user_id: sourceUserId,
-    //   destination_user_id: teknisiUserId
-    // };
-
-
-    // const transfers = await createTransferTehnicianRequest(payload)
-
-    // payment.status = 'PAID';
-    // payment.paymentMethod = event.payment_method;
-    // payment.paymentChannel = event.payment_channel;
-    // await payment.save();
-
-    // console.log("PAYOUT SUCCESS:", transfers);
+    await payment.save();
 
     return res.status(200).send("OK");
 
   } catch (err) {
-    console.error("WEBHOOK ERROR:", err.response?.data || err.message);
+    // console.error("WEBHOOK ERROR:", err.response?.data || err.message);
     return res.status(500).send("ERR");
   }
 };
+
+const handleXenditWebhooksPayout = async (req, res)=>{
+  try {
+    return res.status(200).send("OK");
+  } catch (error) {
+    return res.status(500).send("ERR");
+  }
+}
 
 
 
 export {
     createTransactionGateway,
     checkBalance,
-    // createInvoice,
-    createPayout,
-    handleXenditWebhooksInvoices,
-    // createSubAccount,
     createSplitRule,
     createInvoiceWithSplit,
+    handleXenditWebhooksInvoices,
+    createPayout,
+    handleXenditWebhooksPayout
+    // createInvoice,
+    // createSubAccount,
     // handleXenditWebhooks
 }
