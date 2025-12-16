@@ -9,8 +9,7 @@ const client = axios.create({
     auth: auth,
 })
 
-const createSubAccountRequest = async(body)=>{
-  console.log('body tech : ', body);
+const createSubAccountRequest = async(body)=>{ // teknisi register
     const response = await client.post('/v2/accounts', {
       email: body.business_email,
       type: body.type,
@@ -19,23 +18,53 @@ const createSubAccountRequest = async(body)=>{
         description: 'pembuatan sub account teknisi',
       }
     });
-    
-    console.log('response : ', response.data);
-    
+        
     return response.data
 }
 
-const checkBalanceRequest = async(userId)=>{
+const createSplitRuleRequest = async(body)=>{ //teknisi register
+  try {
+    const response = await client.post('/split_rules', body)
+    return response.data
+  } catch (error) {
+    console.log('error : ', error);
+    
+  }
+}
+
+const getPayoutsChannels = async(channel_name)=>{
+  try {
+    // const { channel_code } = req.query;
+    const response = await client.get('/payouts_channels',{
+      params:{
+        // currency: 'IDR',
+        channel_code : channel_name,
+      }
+    })
+    // console.log('response');
+    return response.data
+    // return res.json({
+    //   success: true,
+    //   channels: response.data
+    // })
+    
+  } catch (error) {
+    console.log('error : ', error);
+    
+  }
+}
+
+const checkBalanceRequest = async(subAccountId)=>{// teknisi
   try {    
     const response = await client.get('/balance', {
       headers: {
         'Content-Type': 'application/json',
-        'for-user-id': userId
+        'for-user-id': subAccountId
       }
     })
   
     
-    // console.log('balance : ', response.data);
+    console.log('balance : ', response.data);
     return response.data
   } catch (error) {
     console.log('error : ', error);
@@ -45,19 +74,7 @@ const checkBalanceRequest = async(userId)=>{
   
 }
 
-const createInvoiceRequest = async(body)=>{
-  const response = await client.post('/v2/invoices', body);
-
-  return response.data
-}
-
-const createTransferTehnicianRequest = async(body)=>{
-  const response = await client.post('/transfers', body)
-
-  return response.data
-}
-
-const createPayoutRequest = async(body)=>{
+const createPayoutRequest = async(body)=>{// teknisi
   try {
     
     const {reference_id, subAccountId} = body
@@ -81,41 +98,7 @@ const createPayoutRequest = async(body)=>{
 }
 
 
-// const createSplitRuleRequest = async(body)=>{
-//     const response = await client.post('/split_rules', body);
-//     return response.data
-// }
-
-// const createDynamicSplitRule = async (teknisiAccountId) => {
-//   const res = await client.post("/split_rules", {
-//     name: "Split Teknisi 95% - Platform 5%",
-//     currency: "IDR",
-//     routes: [
-//       {
-//         reference_id: `teknisi-${Date.now()}`,
-//         destination_account_id: teknisiAccountId,
-//         percent_amount: 95,
-//         currency: "IDR"
-//       },
-//       {
-//         reference_id: `platform-${Date.now()}`,
-//         destination_account_id: process.env.PLATFORM_ACCOUNT_ID,
-//         percent_amount: 5,
-//         currency: "IDR"
-//       }
-//     ]
-//   });
-
-//   return res.data;
-// };
-
-
-// const createInvoiceRequest = async (body) => {
-//   const res = await client.post('/v2/invoices', body);
-//   return res.data;
-// };
-
-const createSplitInvoicesRequest = async(body)=>{
+const createSplitInvoicesRequest = async(body)=>{ // client
   const response = await client.post(`/v2/invoices`, 
     body, 
     {
@@ -125,7 +108,7 @@ const createSplitInvoicesRequest = async(body)=>{
         'for-user-id': body.subAccountId
       }
     })
-    console.log('response : ', response);
+    console.log('response : ', response.data);
     return response.data
 
     
@@ -133,11 +116,13 @@ const createSplitInvoicesRequest = async(body)=>{
 
 export {
     createSubAccountRequest,
-    createInvoiceRequest, 
-    createTransferTehnicianRequest,
+    createSplitRuleRequest,
+    getPayoutsChannels,
     checkBalanceRequest,
     createPayoutRequest,
     createSplitInvoicesRequest
+    // createInvoiceRequest, 
+    // createTransferTehnicianRequest,
     // createSplitRuleRequest,
     // createInvoiceRequest,
     // createDynamicSplitRule
