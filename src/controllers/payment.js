@@ -113,6 +113,7 @@ const createSplitRule = async (req, res) => {
 };
 
 
+
 const createInvoiceWithSplit = async (req, res) => {
   try {
     const { subAccountId, amount, payer_email } = req.body;
