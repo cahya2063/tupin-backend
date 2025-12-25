@@ -9,8 +9,6 @@ const client = axios.create({
     auth: auth,
 })
 
-
-
 const createSubAccountRequest = async(body)=>{ // teknisi register
     const response = await client.post('/v2/accounts', {
       email: body.business_email,
