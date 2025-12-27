@@ -21,8 +21,6 @@ const createSubAccountRequest = async(body)=>{ // teknisi register
         
     return response.data
 }
-
-
 const createSplitRuleRequest = async(body)=>{ //teknisi register
   try {
     const response = await client.post('/split_rules', body)
@@ -33,7 +31,7 @@ const createSplitRuleRequest = async(body)=>{ //teknisi register
   }
 }
 
-const getPayoutsChannels = async(channel_name)=>{
+const getPayoutsChannels = async(channel_name)=>{// teknisi
   try {
     // const { channel_code } = req.query;
     const response = await client.get('/payouts_channels',{
