@@ -2,7 +2,7 @@ import midtransClient from 'midtrans-client';
 // import { createDynamicSplitRule, createInvoiceRequest, createSplitRuleRequest, createSubAccountRequest } from '../services/xendit.service.js'
 import axios from "axios";
 import paymentCollection from '../models/payment.js';
-import { checkBalanceRequest, createPayoutRequest, createSplitInvoicesRequest, getPayoutsChannels } from '../services/xendit.service.js';
+import { checkBalanceRequest, createPayoutRequest, createSplitInvoicesRequest, getInvoiceRequest, getPayoutsChannels } from '../services/xendit.service.js';
 import userCollection from '../models/users.js';
 import payoutCollection from '../models/payout.js';
 // Create Snap API instance
@@ -127,6 +127,7 @@ const createInvoiceWithSplit = async (req, res) => { // client
 
     // simpan record pembayaran di DB
     await paymentCollection.create({
+      invoiceId: invoice.id,
       externalId: externalId,
       jobId: jobId,
       payerId: payerId,
@@ -247,6 +248,34 @@ const createPayout = async(req, res)=>{// teknisi
   }
 }
 
+const getInvoices = async (req, res) => {
+  try {
+    const { receiverId } = req.params
+
+    const invoiceData = await paymentCollection.find({
+      receiverId: receiverId
+    })
+    
+    const payments = invoiceData.map(async (data)=>{      
+      const invoice = await getInvoiceRequest(data.invoiceId, data.subAccountId)
+      return invoice
+    })
+    const results = await Promise.all(payments)
+    
+    return res.status(200).json({
+      success: true,
+      invoices: results
+    })
+
+
+  } catch (error) {
+    console.error(error.response?.data || error.message)
+    return res.status(404).json({
+      success: false,
+      message: error.message
+    })
+  }
+}
 
 
 // =========================
@@ -299,6 +328,7 @@ export {
     createInvoiceWithSplit,
     handleXenditWebhooksInvoices,
     createPayout,
+    getInvoices,
     handleXenditWebhooksPayout
     // createInvoice,
     // createSubAccount,

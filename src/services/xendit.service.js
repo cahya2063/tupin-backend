@@ -21,7 +21,6 @@ const createSubAccountRequest = async(body)=>{ // teknisi register
         
     return response.data
 }
-
 const createSplitRuleRequest = async(body)=>{ //teknisi register
   try {
     const response = await client.post('/split_rules', body)
@@ -32,7 +31,7 @@ const createSplitRuleRequest = async(body)=>{ //teknisi register
   }
 }
 
-const getPayoutsChannels = async(channel_name)=>{
+const getPayoutsChannels = async(channel_name)=>{// teknisi
   try {
     // const { channel_code } = req.query;
     const response = await client.get('/payouts_channels',{
@@ -114,13 +113,25 @@ const createSplitInvoicesRequest = async(body)=>{ // client
     
 }
 
+const getInvoiceRequest = async (invoiceId, subAccountId) => {
+  const response = await client.get(`/v2/invoices/${invoiceId}`, 
+    {
+      headers: {
+        'for-user-id': subAccountId
+      }
+    }
+  )
+  return response.data
+}
+
 export {
     createSubAccountRequest,
     createSplitRuleRequest,
     getPayoutsChannels,
     checkBalanceRequest,
     createPayoutRequest,
-    createSplitInvoicesRequest
+    createSplitInvoicesRequest,
+    getInvoiceRequest
     // createInvoiceRequest, 
     // createTransferTehnicianRequest,
     // createSplitRuleRequest,
