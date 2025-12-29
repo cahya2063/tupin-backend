@@ -113,6 +113,16 @@ const createSplitInvoicesRequest = async(body)=>{ // client
     
 }
 
+const getInvoiceRequest = async (invoiceId, subAccountId) => {
+  const response = await client.get(`/v2/invoices/${invoiceId}`, 
+    {
+      headers: {
+        'for-user-id': subAccountId
+      }
+    }
+  )
+  return response.data
+}
 
 export {
     createSubAccountRequest,
@@ -120,7 +130,8 @@ export {
     getPayoutsChannels,
     checkBalanceRequest,
     createPayoutRequest,
-    createSplitInvoicesRequest
+    createSplitInvoicesRequest,
+    getInvoiceRequest
     // createInvoiceRequest, 
     // createTransferTehnicianRequest,
     // createSplitRuleRequest,

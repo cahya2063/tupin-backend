@@ -1,6 +1,10 @@
 import mongoos from "../utils/db.js";
 
 const paymentSchema = new mongoos.Schema({
+    invoiceId:{
+        type: String,
+        required: true
+    },
     externalId: {
         type: String,
         required: true
