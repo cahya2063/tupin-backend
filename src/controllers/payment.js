@@ -267,7 +267,6 @@ const getInvoices = async (req, res) => {
       invoices: results
     })
 
-
   } catch (error) {
     console.error(error.response?.data || error.message)
     return res.status(404).json({
