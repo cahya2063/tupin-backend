@@ -36,7 +36,8 @@ const postLogin = async(req, res)=>{// all role
         const token = jwt.sign({
             id: isUserExist._id,
             email: isUserExist.email,
-            nama: isUserExist.nama
+            nama: isUserExist.nama,
+            role: isUserExist.role
         },
         JWT_SECRET,
         {expiresIn: '2h'}

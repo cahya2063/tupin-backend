@@ -1,7 +1,7 @@
 import express from 'express';
 import { postSignupClient, postSignupTechncian } from '../controllers/register.js';
 import mongoos from '../utils/db.js';
-import authMiddleware from '../middleware/auth.js';
+import {authMiddleware} from '../middleware/auth.js';
 import { postLogin } from '../controllers/login.js';
 import profileRouter from './profile.js';
 import jobsRouter from './jobs.js';
@@ -11,6 +11,7 @@ import chatRouter from './chat.js';
 import messageRouter from './message.js';
 import reviewRouter from './review.js';
 import paymentRouter from './payment.js';
+import { handleXenditWebhooksInvoices, handleXenditWebhooksPayout } from '../controllers/payment.js';
 const routes = express.Router();
 
 routes.post('/signup', postSignupClient);
@@ -23,7 +24,10 @@ routes.use('/notifications', authMiddleware, notificationRouter)
 routes.use('/chats', authMiddleware, chatRouter)
 routes.use('/messages', authMiddleware, messageRouter)
 routes.use('/review', authMiddleware, reviewRouter)
-routes.use('/payment', paymentRouter)
+routes.use('/payment', authMiddleware, paymentRouter)
+
+routes.post('/xendit-webhooks', handleXenditWebhooksInvoices)
+routes.post('/xendit-webhooks-payout', handleXenditWebhooksPayout)
 routes.get('/', (req, res) => {
   res.json({
     message: 'Hello World'

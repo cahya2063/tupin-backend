@@ -21,7 +21,7 @@ const client = axios.create({
     auth: auth,
 })
 
-const createTransactionGateway = async (req, res) => { // midtrans
+const createTransactionGateway = async (req, res) => { // midtrans, client
   try {
 
     console.log("SERVER KEY :", process.env.MIDTRANS_SERVER_KEY);
@@ -248,7 +248,7 @@ const createPayout = async(req, res)=>{// teknisi
   }
 }
 
-const getInvoices = async (req, res) => {
+const getInvoices = async (req, res) => {// client
   try {
     const { userId } = req.params    
 
