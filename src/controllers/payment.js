@@ -250,15 +250,34 @@ const createPayout = async(req, res)=>{// teknisi
 
 const getInvoices = async (req, res) => {
   try {
-    const { receiverId } = req.params
+    const { userId } = req.params    
 
-    const invoiceData = await paymentCollection.find({
-      receiverId: receiverId
-    })
+    const invoiceData = await paymentCollection.find({$or: [{payerId: userId}, {receiverId: userId}]})
     
     const payments = invoiceData.map(async (data)=>{      
       const invoice = await getInvoiceRequest(data.invoiceId, data.subAccountId)
-      return invoice
+
+      // if(data.status == 'PENDING'){
+      data.status = invoice.status
+      await data.save()
+      // }
+      // return invoice
+      return {
+        id: invoice.id,
+        jobId: data.jobId,
+        external_id: invoice.external_id,
+        status: data.status,
+        merchant_name: invoice.merchant_name,
+        amount: invoice.amount,
+        paid_amount: invoice.paid_amount,
+        paid_at: invoice.paid_at,
+        created: invoice.created,
+        currency: invoice.currency,
+        payment_method: invoice.payment_method,
+        payment_channel: invoice.payment_channel,
+        description: invoice.description,
+        url: invoice.invoice_url
+      }
     })
     const results = await Promise.all(payments)
     
@@ -266,7 +285,6 @@ const getInvoices = async (req, res) => {
       success: true,
       invoices: results
     })
-
 
   } catch (error) {
     console.error(error.response?.data || error.message)
