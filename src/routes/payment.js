@@ -5,6 +5,7 @@ import { authRole } from '../middleware/auth.js'
 
 const paymentRouter = express.Router()
 
+
 paymentRouter.post('/create-payment',authRole(['client']), createTransactionGateway)
 // paymentRouter.post('/create-subaccount', createSubAccount)
 // paymentRouter.post('/create-splitrule', createSplitRule)
