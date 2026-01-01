@@ -171,7 +171,7 @@ const chooseTechnician = async (req, res, next) => {// client
       message: "Berhasil memilih teknisi dan mengirim notifikasi",
     });
   } catch (error) {
-    console.error("❌ Error simpan notifikasi:", error);
+    // console.error("❌ Error simpan notifikasi:", error);
     next(error);
   }
 };
