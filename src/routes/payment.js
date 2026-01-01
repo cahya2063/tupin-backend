@@ -18,5 +18,4 @@ paymentRouter.post('/create-payout',authRole(['technician']), createPayout)
 paymentRouter.get('/get-payout-channels', getPayoutsChannels)
 
 
-
 export default paymentRouter
