@@ -98,7 +98,7 @@ const createSplitRule = async (subAccountId) => { // teknisi register
 
 
 
-const createInvoiceWithSplit = async (req, res) => { // client
+const createInvoiceWithSplit = async (req, res, next) => { // client
   try {
     const { subAccountId, amount, payer_email, jobId, payerId, receiverId } = req.body;
     const externalId = `inv-${Date.now()}`
@@ -143,6 +143,7 @@ const createInvoiceWithSplit = async (req, res) => { // client
   } catch (err) {
     console.error(err.invoice?.data || err);
     res.status(500).json(err.invoice?.data || err.message);
+    next(err)
   }
 };
 
@@ -248,7 +249,7 @@ const createPayout = async(req, res)=>{// teknisi
   }
 }
 
-const getInvoices = async (req, res) => {// client
+const getInvoices = async (req, res, next) => {// client
   try {
     const { userId } = req.params    
 
@@ -288,10 +289,11 @@ const getInvoices = async (req, res) => {// client
 
   } catch (error) {
     console.error(error.response?.data || error.message)
-    return res.status(404).json({
-      success: false,
-      message: error.message
-    })
+    // return res.status(404).json({
+    //   success: false,
+    //   message: error.message
+    // })
+    next(error)
   }
 }
 
