@@ -40,6 +40,14 @@ const paymentSchema = new mongoos.Schema({
     paymentChannel: {
         type: String, 
         required: false,
+    },
+    isClientDelete: {
+        type: Boolean,
+        default: false
+    },
+    isTechnicianDelete: {
+        type: Boolean,
+        default: false
     }
 })
 
