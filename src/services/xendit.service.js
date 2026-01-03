@@ -24,6 +24,8 @@ const createSubAccountRequest = async(body)=>{ // teknisi register
 const createSplitRuleRequest = async(body)=>{ //teknisi register
   try {
     const response = await client.post('/split_rules', body)
+    console.log('split rules : ', response.data);
+    
     return response.data
   } catch (error) {
     console.log('error : ', error);

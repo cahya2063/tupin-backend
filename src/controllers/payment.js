@@ -2,9 +2,10 @@ import midtransClient from 'midtrans-client';
 // import { createDynamicSplitRule, createInvoiceRequest, createSplitRuleRequest, createSubAccountRequest } from '../services/xendit.service.js'
 import axios from "axios";
 import paymentCollection from '../models/payment.js';
-import { checkBalanceRequest, createPayoutRequest, createSplitInvoicesRequest, getInvoiceRequest, getPayoutsChannels } from '../services/xendit.service.js';
+import { checkBalanceRequest, createPayoutRequest, createSplitInvoicesRequest, createSplitRuleRequest, getInvoiceRequest, getPayoutsChannels } from '../services/xendit.service.js';
 import userCollection from '../models/users.js';
 import payoutCollection from '../models/payout.js';
+import jobsCollection from '../models/jobs.js';
 // Create Snap API instance
 let snap = new midtransClient.Snap({
   isProduction: false,
@@ -68,7 +69,7 @@ const createTransactionCash = async(req, res)=>{ // client
 const createSplitRule = async (subAccountId) => { // teknisi register
   try {
     
-    const response = await client.post("/split_rules", {
+    const data = {
       name: "split rule platform dan teknisi",
       description: "pembagian pembayaran antara teknisi dan platform",
       routes: [
@@ -85,7 +86,26 @@ const createSplitRule = async (subAccountId) => { // teknisi register
           reference_id: "reference-2"
         }
       ]
-    });
+    }
+    const response = await createSplitRuleRequest(data)
+    // const response = await client.post("/split_rules", {
+    //   name: "split rule platform dan teknisi",
+    //   description: "pembagian pembayaran antara teknisi dan platform",
+    //   routes: [
+    //     {
+    //       percent_amount: 95,
+    //       currency: "IDR",
+    //       destination_account_id: subAccountId,
+    //       reference_id: "reference-1"
+    //     },
+    //     {
+    //       percent_amount: 5,
+    //       currency: "IDR",
+    //       destination_account_id: process.env.PLATFORM_ACCOUNT_ID,
+    //       reference_id: "reference-2"
+    //     }
+    //   ]
+    // });
     
   
     console.log("SPLIT RULE CREATED:", response.data.id);
@@ -102,6 +122,14 @@ const createInvoiceWithSplit = async (req, res, next) => { // client
   try {
     const { subAccountId, amount, payer_email, jobId, payerId, receiverId } = req.body;
     const externalId = `inv-${Date.now()}`
+
+    const job = await jobsCollection.findOne({_id: jobId})
+    if(!job){
+      return res.status(404).json({
+        success: false,
+        message: "Job tidak ditemukan"
+      })
+    }
     const technician = await userCollection.findOne({
       subAccountId: subAccountId
     });
@@ -119,7 +147,7 @@ const createInvoiceWithSplit = async (req, res, next) => { // client
       subAccountId: subAccountId,
       amount,
       payer_email,
-      description: "Pembayaran jasa servis"
+      description: `Pembayaran jasa perbaikan ${job.title}`
     }
     const invoice = await createSplitInvoicesRequest(payload)
     // console.log('berhasil membayar : ', invoice);
@@ -168,10 +196,10 @@ const checkBalance = async (req, res, next)=>{ // teknisi
 
 
 
-const createPayout = async(req, res)=>{// teknisi
+const createPayout = async(req, res, next)=>{// teknisi
   try {
     
-    const {technicianId, amount, channelName}= req.body
+    const {technicianId, amount, channelName, accountNumber}= req.body
     const referenceId = `payout-${Date.now()}`
     const channelCode = `ID_${channelName}`
     console.log(`debug payout : ${technicianId}, ${amount}, ${channelCode}`);
@@ -216,7 +244,7 @@ const createPayout = async(req, res)=>{// teknisi
       subAccountId: technician.subAccountId,
       channel_code: paymentChannels[0].channel_code,
       channel_properties: {
-        account_number: technician.account_number,
+        account_number: accountNumber,
         account_holder_name: technician.nama
       },
       amount: amount,
@@ -244,7 +272,7 @@ const createPayout = async(req, res)=>{// teknisi
     })
     
   } catch (error) {
-    console.log(error);
+    next(error)
     
   }
 }
@@ -277,7 +305,9 @@ const getInvoices = async (req, res, next) => {// client
         payment_method: invoice.payment_method,
         payment_channel: invoice.payment_channel,
         description: invoice.description,
-        url: invoice.invoice_url
+        url: invoice.invoice_url,
+        isClientDelete: data.isClientDelete,
+        isTechnicianDelete: data.isTechnicianDelete
       }
     })
     const results = await Promise.all(payments)
@@ -297,6 +327,31 @@ const getInvoices = async (req, res, next) => {// client
   }
 }
 
+const deleteInvoice = async (req, res, next)=>{
+  try {
+    const {externalId} = req.params
+
+    const invoice = await paymentCollection.findOne({
+      externalId: externalId
+    })
+    if(!invoice){
+      return res.status(404).json({
+        success: false,
+        message: 'invoice tidak ditemukan'
+      })
+    }
+    invoice.isClientDelete = true
+    await invoice.save()
+
+    return res.status(200).json({
+      success: true,
+      message: 'invoice berhasil di hapus dari riwayat Pembayaran'
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
 
 // =========================
 // XENDIT WEBHOOK → TRANSFER 95%
@@ -305,21 +360,23 @@ const handleXenditWebhooksInvoices = async (req, res) => {// xendit execution
   try {
     const event = req.body;
 
-    console.log('event : ', event);
+    console.log('event1 : ', event.id);
     
 
-    const externalId = event.data.payment_reference_id;
+    const id = event.id;
 
     // const amount = Number(event.amount);
     const payment = await paymentCollection.findOne({
-      externalId: externalId,
+      invoiceId: id,
     })
+    // console.log('payment : ', payment);
+    
 
-    if(!payment){
-      return res.status(404).send("Payment not found");
-    }
+    // if(!payment){
+    //   return res.status(404).send("Payment not found");
+    // }
 
-    payment.status = event.data.status;
+    payment.status = event.status;
 
     await payment.save();
 
@@ -333,6 +390,8 @@ const handleXenditWebhooksInvoices = async (req, res) => {// xendit execution
 
 const handleXenditWebhooksPayout = async (req, res)=>{
   try {
+    console.log('event : ', req.body);
+    
     return res.status(200).send("OK");
   } catch (error) {
     return res.status(500).send("ERR");
@@ -349,6 +408,7 @@ export {
     handleXenditWebhooksInvoices,
     createPayout,
     getInvoices,
+    deleteInvoice,
     handleXenditWebhooksPayout
     // createInvoice,
     // createSubAccount,
