@@ -18,7 +18,7 @@ const getMessageByChatId = async (req, res, next)=>{// client, teknisi
         next(error)
     }
 }
-
+//test 1
 const createMessage = async (req, res, next)=>{// client, teknisi
     try {
         const {chatId, senderId, message, messageType} = req.body
