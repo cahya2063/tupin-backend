@@ -10,6 +10,8 @@ const client = axios.create({
 })
 
 const createSubAccountRequest = async(body)=>{ // teknisi register
+  try {
+    
     const response = await client.post('/v2/accounts', {
       email: body.business_email,
       type: body.type,
@@ -18,13 +20,17 @@ const createSubAccountRequest = async(body)=>{ // teknisi register
         description: 'pembuatan sub account teknisi',
       }
     });
-        
+    // console.log('subaccount : ', response.data);
+    
     return response.data
+  } catch (error) {
+    return console.log('error : ', error.message);
+  }
 }
 const createSplitRuleRequest = async(body)=>{ //teknisi register
   try {
     const response = await client.post('/split_rules', body)
-    console.log('split rules : ', response.data);
+    // console.log('split rules : ', response.data);
     
     return response.data
   } catch (error) {

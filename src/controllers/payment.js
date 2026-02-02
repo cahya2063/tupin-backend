@@ -88,28 +88,9 @@ const createSplitRule = async (subAccountId) => { // teknisi register
       ]
     }
     const response = await createSplitRuleRequest(data)
-    // const response = await client.post("/split_rules", {
-    //   name: "split rule platform dan teknisi",
-    //   description: "pembagian pembayaran antara teknisi dan platform",
-    //   routes: [
-    //     {
-    //       percent_amount: 95,
-    //       currency: "IDR",
-    //       destination_account_id: subAccountId,
-    //       reference_id: "reference-1"
-    //     },
-    //     {
-    //       percent_amount: 5,
-    //       currency: "IDR",
-    //       destination_account_id: process.env.PLATFORM_ACCOUNT_ID,
-    //       reference_id: "reference-2"
-    //     }
-    //   ]
-    // });
     
   
-    console.log("SPLIT RULE CREATED:", response.data.id);
-    return response.data;
+    return response;
   } catch (error) {
     console.log('error : ', error);
     
