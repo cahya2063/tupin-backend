@@ -70,6 +70,7 @@ const postSignupTechncian = async (req, res)=>{
     
     newUser.subAccountId = technicianSubAccount.id;
     newUser.split_rule_id = splitRule.id
+    newUser.role = 'technician'
     // untuk menyimpan ke database
     await userCollection.insertMany([newUser]);
     res.status(201).json({

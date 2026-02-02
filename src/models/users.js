@@ -50,6 +50,17 @@ const logInSchema = new mongoos.Schema({
     enum: ['technician', 'client', 'admin'], // daftar role yg valid
     default: 'client',                     // default role
   },
+  location: {
+    type: {
+      type: String,
+      enum: ['Point'],
+      default: 'Point'
+    },
+    coordinates: {
+      type: [Number],
+      index: '2dsphere'
+    }
+  },
   split_rule_id: {
     type: String,
     required: false
