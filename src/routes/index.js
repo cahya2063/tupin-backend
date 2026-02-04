@@ -13,6 +13,7 @@ import reviewRouter from './review.js';
 import paymentRouter from './payment.js';
 import { handleXenditWebhooksInvoices, handleXenditWebhooksPayout } from '../controllers/payment.js';
 import ongkirRouter from './ongkir.js';
+import { getNearestTechnician } from '../services/ongkir.service.js';
 const routes = express.Router();
 
 routes.post('/signup', postSignupClient);
@@ -26,6 +27,7 @@ routes.use('/chats', authMiddleware, chatRouter)
 routes.use('/messages', authMiddleware, messageRouter)
 routes.use('/review', authMiddleware, reviewRouter)
 routes.use('/payment', authMiddleware, paymentRouter)
+routes.post('/nearest-technician', authMiddleware, getNearestTechnician)
 routes.use('/ongkir', authMiddleware, ongkirRouter)
 
 routes.post('/xendit-webhooks', handleXenditWebhooksInvoices)
