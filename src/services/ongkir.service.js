@@ -59,7 +59,7 @@ const getNearestTechnician = async(req, res)=>{
         data: technicians
     })
 }
-//test 1
+//test 2
 
 export{
     getProvinceRequest,
