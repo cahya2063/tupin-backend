@@ -41,7 +41,7 @@ const getNearestTechnician = async(req, res)=>{
             }
         },
         {
-            $sort: { distance: 1 }// asc
+            $sort: { distance: 1 }// ascending
         },
         {
             $limit: 10
@@ -59,7 +59,7 @@ const getNearestTechnician = async(req, res)=>{
         data: technicians
     })
 }
-
+//test 1
 
 export{
     getProvinceRequest,
