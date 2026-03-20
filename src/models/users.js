@@ -37,6 +37,19 @@ const logInSchema = new mongoos.Schema({
     type: Number,
     required: false,
   },
+  skills: {
+    type: Array,
+    required: true
+  },
+  description: {
+    type: String,
+    required: false
+  },
+  ratings: {
+    type: Number,
+    required: false,
+    default: 0
+  },
   avatar: {
     type: String,   // simpan path atau filename
     required: false,

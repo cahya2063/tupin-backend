@@ -5,6 +5,32 @@ import { createNotification } from "./notification.js";
 
 const ObjectId = mongoose.Types.ObjectId
 
+const addJob = async (req, res) => { // client
+  try {
+    const data = req.body;
+    const newJob = {
+      title: data.title,
+      category: data.category,
+      deadline: JSON.parse(data.deadline || "{}"), // kalau deadline dikirim json
+      description: data.description,
+      photo: req.file ? req.file.filename : null, // ambil nama file
+      location: JSON.parse(data.location || "{}"),
+      idCreator: data.userId,
+      selectedTechnician: data.selectedTechnician
+    };
+
+    const result = await jobsCollection.insertMany([newJob]);
+    const job = result[0];
+    createNotification(job.idCreator, job.id, `berhasil mengunggah job baru dengan judul ${job.title}` )
+
+    res.status(201).json({
+      message: "berhasil menambah job",
+      data: newJob,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
 const getAllJob = async (req, res)=>{// teknisi
   try {
     const data = await jobsCollection.find({})
@@ -72,37 +98,32 @@ const getAcceptedJob = async(req, res, next)=>{// teknisi
   }
 }
 
-
-const addJob = async (req, res) => { // client
+const getJobHistory = async(req, res, next)=>{// teknisi
   try {
-    const data = req.body;
-    const newJob = {
-      title: data.title,
-      category: data.category,
-      skills: JSON.parse(data.skills || "[]"), // kalau skills dikirim array/stringify
-      scoped: data.scoped,
-      deadline: JSON.parse(data.deadline || "{}"), // kalau deadline dikirim json
-      experiences: data.experiences,
-      budget: data.budget,
-      paymentMethod: data.payment_method,
-      description: data.description,
-      photo: req.file ? req.file.filename : null, // ambil nama file
-      invites: JSON.parse(data.invites || "[]"),
-      idCreator: data.userId
-    };
+    const {technicianId} = req.params
+    const jobs = await jobsCollection.find({
+      selectedTechnician: technicianId,
+      status: 'completed'
+    })
 
-    const result = await jobsCollection.insertMany([newJob]);
-    const job = result[0];
-    createNotification(job.idCreator, job.id, `berhasil mengunggah job baru dengan judul ${job.title}` )
-
-    res.status(201).json({
-      message: "berhasil menambah job",
-      data: newJob,
-    });
+    
+    if(jobs){
+      return res.status(200).json({
+        success: true,
+        message: 'berhasil mengambil job history',
+        jobs
+      })
+    }
+    return res.status(404).json({
+      success: false,
+      message: 'tidak ada job history'
+    })
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    next(error)
   }
-};
+}
+
+
 const applyJob = async (req, res, next) => { // technician
   try {
     const { jobId } = req.params;
@@ -345,8 +366,8 @@ const cancelJobs = async (req, res, next)=>{// teknisi, client
     // const technicianId = job.selectedTechnician
     // const clientId = job.idCreator
 
-    job.status = 'open'
-    job.selectedTechnician = null
+    job.status = 'canceled'
+    // job.selectedTechnician = null
     await job.save()
 
     // const chat = await chatCollection.findOneAndDelete({
@@ -373,6 +394,7 @@ export {
   addJob, 
   getAllJob, 
   getDetailJob, 
+  getJobHistory,
   applyJob, 
   getJobByUser, 
   chooseTechnician, 

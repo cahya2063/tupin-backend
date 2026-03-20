@@ -4,10 +4,10 @@ const skillSchema = new mongoos.Schema({
     type: String,
     required: true
   },
-  skill: {
-    type: Array,
-    required: true
-  }
+  // skill: {
+  //   type: Array,
+  //   required: true
+  // }
 })
 
 const SkillCollection = mongoos.model('skills', skillSchema)

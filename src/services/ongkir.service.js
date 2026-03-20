@@ -30,14 +30,14 @@ const getNearestTechnician = async(req, res)=>{
     const technicians = await userCollection.aggregate([
         {
             $geoNear: {
-            near:{
-                type: "Point",
-                coordinates: [lng, lat]
-            },
-            distanceField: 'distance',
-            spherical: true,
-            distanceMultiplier: 0.001, // rubah dari Km ke Meter
-            query: { role: 'technician' }
+                near:{
+                    type: "Point",
+                    coordinates: [lng, lat]
+                },
+                distanceField: 'distance',
+                spherical: true,
+                distanceMultiplier: 0.001, // rubah dari Km ke Meter
+                query: { role: 'technician' }
             }
         },
         {
@@ -49,14 +49,13 @@ const getNearestTechnician = async(req, res)=>{
         {
             $project:{
                 _id: 1,
-                nama: 1,
                 distance: 1
             }
         }
     ])
     return res.json({
         success: true,
-        data: technicians
+        technicians
     })
 }
 //test 1

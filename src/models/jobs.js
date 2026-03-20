@@ -9,32 +9,12 @@ const jobsSchema = new mongoos.Schema({
         type: String,
         required: true
     },
-    skills: {
-        type: Array,
-        required: false
-    },
-    scoped: {
-        type: String,
-        required: false
-    },
+
     deadline: {
         type: Object,
         required: false
     },
-    experiences: {
-        type: String,
-        required: false
-    },
-    paymentMethod: {
-        type: String,
-        enum: ['cash', 'gateway'],
-        required: false,
-        default: 'cash'
-    },
-    budget: {
-        type: Number,
-        required: true
-    },
+
     description: {
         type: String,
         required: true
@@ -43,8 +23,8 @@ const jobsSchema = new mongoos.Schema({
         type: String,
         required: false
     },
-    invites: {
-        type: Array,
+    location: {
+        type: Object,
         required: true
     },
     selectedTechnician: {
@@ -53,7 +33,7 @@ const jobsSchema = new mongoos.Schema({
     },
     status: {
         type: String,
-        enum: ['open', 'pending', 'request', 'progress', 'done', 'completed', 'payed', 'payed done'],
+        enum: ['open', 'pending', 'request', 'progress', 'done', 'completed', 'payed', 'payed done', 'canceled'],
         default: 'open'
     },
     idCreator: {
