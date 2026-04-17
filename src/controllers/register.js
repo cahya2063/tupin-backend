@@ -2,7 +2,7 @@ import userCollection from '../models/users.js';
 import { createSubAccountRequest } from '../services/xendit.service.js';
 import { encrypt } from '../utils/bcrypt.js';
 import registerValidation from '../validation/register.js';
-import { createSplitRule } from './payment.js';
+// import { createSplitRule } from './payment.js';
 
 const postSignupClient = async (req, res) => {// client, teknisi
   const validasi = registerValidation(req.body);
@@ -61,15 +61,15 @@ const postSignupTechncian = async (req, res)=>{
     };
 
     const technicianSubAccount = await createSubAccountRequest({
-      type: 'MANAGED',
+      type: 'OWNED',
       business_email: validasi.data.email,
       business_name: validasi.data.nama,
     })
 
-    const splitRule = await createSplitRule(technicianSubAccount.id)
+    // const splitRule = await createSplitRule(technicianSubAccount.id)
     
     newUser.subAccountId = technicianSubAccount.id;
-    newUser.split_rule_id = splitRule.id
+    // newUser.split_rule_id = splitRule.id
     newUser.role = 'technician'
     // untuk menyimpan ke database
     await userCollection.insertMany([newUser]);

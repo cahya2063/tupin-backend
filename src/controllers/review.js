@@ -46,10 +46,10 @@ const getReviewByUserId = async(req, res, next)=>{//client teknisi
 
 const getReviewByJobId = async(req, res, next)=>{// client, teknisi
     try {
-        const {jobId, userId} = req.params
+        const {jobId} = req.params
         const review = await reviewCollection.findOne({
             jobId: jobId,
-            senderId: userId
+            // senderId: userId
         })
         if(!review){
             res.status(404).json({

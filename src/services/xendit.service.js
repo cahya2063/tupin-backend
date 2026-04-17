@@ -20,24 +20,64 @@ const createSubAccountRequest = async(body)=>{ // teknisi register
         description: 'pembuatan sub account teknisi',
       }
     });
-    // console.log('subaccount : ', response.data);
+    console.log('subaccount : ', response.data);
     
     return response.data
   } catch (error) {
     return console.log('error : ', error.message);
   }
 }
-const createSplitRuleRequest = async(body)=>{ //teknisi register
-  try {
-    const response = await client.post('/split_rules', body)
-    // console.log('split rules : ', response.data);
+// const createSplitRuleRequest = async(body)=>{ //teknisi register
+//   try {
+//     const response = await client.post('/split_rules', body)
+//     // console.log('split rules : ', response.data);
     
+//     return response.data
+//   } catch (error) {
+//     console.log('error : ', error);
+    
+//   }
+// }
+
+const createSplitInvoicesRequest = async(body)=>{ // client
+  const response = await client.post(`/v2/invoices`, body)
+    console.log('response : ', response.data);
+    return response.data
+}
+
+const getInvoiceRequest = async (invoiceId) => {
+  const response = await client.get(`/v2/invoices/${invoiceId}`)
+  return response.data
+}
+
+const createTransferRequest = async(body)=>{
+  try {
+    const response = await client.post(`transfers`, body)
+    return response.data
+  } catch (error) {
+    next(error)
+  }
+}
+const checkBalanceRequest = async(subAccountId)=>{// teknisi
+  try {    
+    const response = await client.get('/balance', {
+      headers: {
+        'Content-Type': 'application/json',
+        'for-user-id': subAccountId
+      }
+    })
+  
+    
+    console.log('balance : ', response.data);
     return response.data
   } catch (error) {
     console.log('error : ', error);
     
+    
   }
+  
 }
+
 
 const getPayoutsChannels = async(channel_name)=>{// teknisi
   try {
@@ -61,25 +101,7 @@ const getPayoutsChannels = async(channel_name)=>{// teknisi
   }
 }
 
-const checkBalanceRequest = async(subAccountId)=>{// teknisi
-  try {    
-    const response = await client.get('/balance', {
-      headers: {
-        'Content-Type': 'application/json',
-        'for-user-id': subAccountId
-      }
-    })
-  
-    
-    console.log('balance : ', response.data);
-    return response.data
-  } catch (error) {
-    console.log('error : ', error);
-    
-    
-  }
-  
-}
+
 
 const createPayoutRequest = async(body)=>{// teknisi
   try {
@@ -105,38 +127,14 @@ const createPayoutRequest = async(body)=>{// teknisi
 }
 
 
-const createSplitInvoicesRequest = async(body)=>{ // client
-  const response = await client.post(`/v2/invoices`, 
-    body, 
-    {
-      headers:{
-        'with-split-rule': body.split_rule_id,
-        // 'api-version': '2024-11-11',
-        'for-user-id': body.subAccountId
-      }
-    })
-    console.log('response : ', response.data);
-    return response.data
 
-    
-}
-
-const getInvoiceRequest = async (invoiceId, subAccountId) => {
-  const response = await client.get(`/v2/invoices/${invoiceId}`, 
-    {
-      headers: {
-        'for-user-id': subAccountId
-      }
-    }
-  )
-  return response.data
-}
 
 export {
     createSubAccountRequest,
-    createSplitRuleRequest,
+    // createSplitRuleRequest,
     getPayoutsChannels,
     checkBalanceRequest,
+    createTransferRequest,
     createPayoutRequest,
     createSplitInvoicesRequest,
     getInvoiceRequest

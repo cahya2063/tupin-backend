@@ -13,6 +13,10 @@ const paymentSchema = new mongoos.Schema({
         type: String,
         required: true
     },
+    detail: {
+        type: Object,
+        required: false
+    },
     payerId: {
         type: String,
         required: true,
