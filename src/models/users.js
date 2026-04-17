@@ -37,6 +37,10 @@ const logInSchema = new mongoos.Schema({
     type: Number,
     required: false,
   },
+  receiverLocation:{
+    type: Object,
+    required: false
+  },
   skills: {
     type: Array,
     required: true

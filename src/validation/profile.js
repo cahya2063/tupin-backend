@@ -26,9 +26,12 @@ const sanitizeUpdate = (data) => {
       ? validator.escape(validator.trim(String(data.nama)))
       : '',
 
+
     zip_code: data.zip_code !== undefined
       ? validator.escape(String(data.zip_code))
       : '',
+
+    receiverLocation: data.receiverLocation ?? null
   }
 }
 
@@ -36,7 +39,7 @@ const updateProfileValidation = (dt) => {
   let data = sanitizeUpdate(dt)
 
   // 📱 phone_number (opsional tapi kalau ada → harus angka)
-  if (data.phone_number && !validator.isMobilePhone(data.phone_number, 'id-ID')) {
+  if (data.phone_number && !validator.isMobilePhone(data.phone_number)) {
     return {
       status: false,
       message: 'Nomor HP tidak valid'
@@ -50,6 +53,14 @@ const updateProfileValidation = (dt) => {
       message: 'Alamat minimal 3 karakter'
     }
   }
+
+  if (typeof data.receiverLocation !== 'object' || data.receiverLocation === null) {
+    return {
+      status: false,
+      message: 'receiverLocation harus berupa objek'
+    }
+  }
+  
 
   // 🏘 village (opsional, huruf saja kalau diisi)
   if (data.village && !validator.isAlpha(data.village, 'en-US', { ignore: ' ' })) {

@@ -14,16 +14,23 @@ const jobsSchema = new mongoos.Schema({
         type: Object,
         required: false
     },
-
+    price: {
+        type: Number,
+        required: false
+    },
     description: {
         type: String,
         required: true
     },
-    photo: {
-        type: String,
+    photos: {
+        type: Array,
         required: false
     },
     location: {
+        type: Object,
+        required: true
+    },
+    destination: {
         type: Object,
         required: true
     },
@@ -33,7 +40,7 @@ const jobsSchema = new mongoos.Schema({
     },
     status: {
         type: String,
-        enum: ['open', 'pending', 'request', 'progress', 'done', 'completed', 'payed', 'payed done', 'canceled'],
+        enum: ['open', 'payed pending', 'paid', 'done', 'completed', 'canceled'],
         default: 'open'
     },
     idCreator: {

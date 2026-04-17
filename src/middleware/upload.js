@@ -3,12 +3,12 @@ import path from "path";
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    if (file.fieldname === "photo") {
-      cb(null, "uploads/jobs"); // untuk job
+    if (file.fieldname === "photos") {
+      cb(null, "uploads/jobs");
     } else if (file.fieldname === "avatar") {
-      cb(null, "uploads/profile"); // untuk profile
+      cb(null, "uploads/profile");
     } else {
-      cb(null, "uploads/others"); // fallback
+      cb(null, "uploads/others");
     }
   },
   filename: (req, file, cb) => {
@@ -17,6 +17,11 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({ storage });
+const upload = multer({
+  storage,
+  limits: {
+    files: 10, // maksimal 10 file
+  },
+});
 
 export default upload;
