@@ -25,6 +25,9 @@ const sanitizeUpdate = (data) => {
     nama: data.nama
       ? validator.escape(validator.trim(String(data.nama)))
       : '',
+    description: data.description
+      ? validator.trim(String(data.description))
+      : '',
 
 
     zip_code: data.zip_code !== undefined
@@ -90,6 +93,12 @@ const updateProfileValidation = (dt) => {
     return {
       status: false,
       message: 'Nama hanya boleh huruf'
+    }
+  }
+  if (data.description && !validator.isLength(data.description, { min: 3, max: 200 })) {
+    return {
+      status: false,
+      message: 'Deskripsi minimal 3 karakter dan maksimal 200 karakter'
     }
   }
 
