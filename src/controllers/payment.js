@@ -229,11 +229,8 @@ const createTransfer = async(jobId)=>{
       success: false,
       message: 'pembayaran untuk job ini tidak ditemukan atau belum dibayar'
     })
-
-    
-
   } catch (error) {
-    
+    next(error)
   }
 }
 
