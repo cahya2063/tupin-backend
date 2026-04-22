@@ -39,7 +39,7 @@ const createSubAccountRequest = async(body)=>{ // teknisi register
 //   }
 // }
 
-const createSplitInvoicesRequest = async(body)=>{ // client
+const createInvoicesRequest = async(body)=>{ // client
   const response = await client.post(`/v2/invoices`, body)
     console.log('response : ', response.data);
     return response.data
@@ -136,7 +136,7 @@ export {
     checkBalanceRequest,
     createTransferRequest,
     createPayoutRequest,
-    createSplitInvoicesRequest,
+    createInvoicesRequest,
     getInvoiceRequest
     // createInvoiceRequest, 
     // createTransferTehnicianRequest,

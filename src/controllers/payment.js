@@ -2,7 +2,7 @@ import midtransClient from 'midtrans-client';
 // import { createDynamicSplitRule, createInvoiceRequest, createSplitRuleRequest, createSubAccountRequest } from '../services/xendit.service.js'
 import axios from "axios";
 import paymentCollection from '../models/payment.js';
-import { checkBalanceRequest, createPayoutRequest, createSplitInvoicesRequest, createTransferRequest, getInvoiceRequest, getPayoutsChannels } from '../services/xendit.service.js';
+import { checkBalanceRequest, createPayoutRequest, createInvoicesRequest, createTransferRequest, getInvoiceRequest, getPayoutsChannels } from '../services/xendit.service.js';
 import userCollection from '../models/users.js';
 import payoutCollection from '../models/payout.js';
 import jobsCollection from '../models/jobs.js';
@@ -22,40 +22,40 @@ const client = axios.create({
     auth: auth,
 })
 
-const createTransactionGateway = async (req, res) => { // midtrans, client
-  try {
+// const createTransactionGateway = async (req, res) => { // midtrans, client
+//   try {
 
-    console.log("SERVER KEY :", process.env.MIDTRANS_SERVER_KEY);
+//     console.log("SERVER KEY :", process.env.MIDTRANS_SERVER_KEY);
 
-    // console.log('req body : ', req.body);
-    const {amount, customer_details} = req.body;
+//     // console.log('req body : ', req.body);
+//     const {amount, customer_details} = req.body;
     
-    const payload = {
-      transaction_details: {
-        order_id: `GATEWAY-${Date.now()}`,
-        gross_amount: Number(amount),
-      },
-      customer_details: {
-        first_name: customer_details.name,
-        email: customer_details.email
-      }
-    };
+//     const payload = {
+//       transaction_details: {
+//         order_id: `GATEWAY-${Date.now()}`,
+//         gross_amount: Number(amount),
+//       },
+//       customer_details: {
+//         first_name: customer_details.name,
+//         email: customer_details.email
+//       }
+//     };
 
-    const transaction = await snap.createTransaction(payload);
+//     const transaction = await snap.createTransaction(payload);
 
-    return res.status(200).json({
-        token: transaction.token,
-        redirect_url: transaction.redirect_url,
-    });
+//     return res.status(200).json({
+//         token: transaction.token,
+//         redirect_url: transaction.redirect_url,
+//     });
 
-  } catch (error) {
-    console.log("MIDTRANS ERROR :", error);
-    return res.status(500).json({
-      message: "gagal membuat transaksi",
-      error: error.message,
-    });
-  }
-};
+//   } catch (error) {
+//     console.log("MIDTRANS ERROR :", error);
+//     return res.status(500).json({
+//       message: "gagal membuat transaksi",
+//       error: error.message,
+//     });
+//   }
+// };
 
 
 // const createSplitRule = async (subAccountId) => { // teknisi register
@@ -93,7 +93,7 @@ const createTransactionGateway = async (req, res) => { // midtrans, client
 
 const createInvoice = async (req, res, next) => { // client
   try {
-    const { subAccountId, amount, payer_email, jobId, payerId, receiverId } = req.body;
+    const { subAccountId, amount, payer_email, jobId, payerId, receiverId, jobStatus } = req.body;
     const externalId = `inv-${Date.now()}`
 
     const job = await jobsCollection.findOne({_id: jobId})
@@ -103,46 +103,61 @@ const createInvoice = async (req, res, next) => { // client
         message: "Job tidak ditemukan"
       })
     }
-
-    job.status = 'payed pending'
-    await job.save()
-
     const technician = await userCollection.findOne({
       subAccountId: subAccountId
     });
+
     if (!technician) {
       return res.status(404).json({
         success: false,
         message: "Teknisi dengan subAccountId tersebut tidak ditemukan",
       });
     }
-    
-
     const payload = {
       external_id: externalId,
-      // split_rule_id: technician.split_rule_id,
-      subAccountId: subAccountId,
+      subAccountId: technician.subAccountId,
       amount,
       payer_email,
       description: `Pembayaran jasa perbaikan ${job.title}`
     }
-    const invoice = await createSplitInvoicesRequest(payload)
-    console.log('berhasil membayar : ', invoice);
+    const invoice = await createInvoicesRequest(payload)
+    console.log('berhasil membayar : ', invoice); 
 
+    if(jobStatus == 'open'){
 
-    // simpan record pembayaran di DB
-    await paymentCollection.create({
-      invoiceId: invoice.id,
-      externalId: externalId,
-      jobId: jobId,
-      payerId: payerId,
-      receiverId: receiverId,
-      subAccountId: subAccountId,
-      amount: invoice.amount,
-      status: invoice.status
+      job.status = 'pending transport fee'
+      await job.save()
+      await paymentCollection.create({
+        invoiceId: invoice.id,
+        externalId: externalId,
+        jobId: jobId,
+        type: 'transportation',
+        payerId: payerId,
+        receiverId: receiverId,
+        subAccountId: technician.subAccountId,
+        amount: invoice.amount,
+        status: invoice.status
+  
+      })
+    }
+    else if (job.status == 'checked') {
 
-    })
+      await paymentCollection.create({
+        invoiceId: invoice.id,
+        externalId: externalId,
+        jobId: jobId,
+        type: 'repair',
+        payerId: payerId,
+        receiverId: receiverId,
+        subAccountId: technician.subAccountId,
+        amount: invoice.amount,
+        status: invoice.status
+  
+      })
+    }
+
     
+  
     return res.status(200).json({ success: true, invoices: invoice });
 
   } catch (err) {
@@ -171,6 +186,7 @@ const getInvoices = async (req, res, next) => {// client
         jobId: data.jobId,
         external_id: invoice.external_id,
         status: data.status,
+        type: data.type,
         merchant_name: invoice.merchant_name,
         amount: invoice.amount,
         paid_amount: invoice.paid_amount,
@@ -382,8 +398,12 @@ const handleXenditWebhooksInvoices = async (req, res) => {// xendit execution
 
     const job = await jobsCollection.findById(payment.jobId)
 
-    if(event.status == 'PAID'){
-      job.status = 'paid'
+    if(event.status == 'PAID' && payment.type === 'transportation' && job.status == 'open'){
+      job.status = 'transport fee paid'
+      await job.save()
+    }
+    else if(event.status == 'PAID' && payment.type === 'repair' && job.status == 'checked'){
+      job.status = 'repair paid'
       await job.save()
     }
 
@@ -419,7 +439,7 @@ const handleXenditWebhooksPayout = async (req, res)=>{
 
 
 export {
-    createTransactionGateway,
+    // createTransactionGateway,
     checkBalance,
     // createSplitRule,
     createInvoice,
