@@ -1,5 +1,5 @@
 import express from 'express'
-import { addJob, cancelJobs, doneJob, getAcceptedJob, getAllJob, getDetailJob, getJobByUser, getJobHistory, isJobCompleted } from '../controllers/jobs.js'
+import { addJob, cancelJobs, checkedJob, doneJob, getAcceptedJob, getAllJob, getDetailJob, getJobByUser, getJobHistory, isJobCompleted } from '../controllers/jobs.js'
 import upload from '../middleware/upload.js'
 import { authRole } from '../middleware/auth.js'
 
@@ -13,6 +13,8 @@ jobsRouter.get("/uploaded/:userId",authRole(['client']), getJobByUser);
 // jobsRouter.post("/:jobId/choose-technician",authRole(['client']), chooseTechnician);
 jobsRouter.get('/:technicianId/accepted-jobs', authRole(['technician']), getAcceptedJob)
 jobsRouter.get('/:technicianId/job-history', authRole(['client']), getJobHistory)
+jobsRouter.post('/:jobId/checked-job', authRole(['client']), checkedJob)
+// jobsRouter.post('/:jobId/add-price', authRole(['client']), addPriceToJob)
 // jobsRouter.post('/:jobId/technician-request',authRole(['technician']), technicianRequest)
 // jobsRouter.post('/:jobId/approve-job-request',authRole(['technician']), approveJobRequest)
 jobsRouter.post('/:jobId/done-job',authRole(['technician']), doneJob)

@@ -122,11 +122,14 @@ const getAcceptedJob = async(req, res, next)=>{// teknisi
       const payment = paymentCollection.findOne({
         jobId: job._id
       })
-      if(payment.status == 'PAID'){
-        job.status = 'payed'
+      // console.log('payment : ', payment);
+      if(payment.status == 'PAID' && payment.type === 'transportation' && job.status == 'pending transport fee'){
+        job.status = 'transport fee paid'
         job.save()
       }
     })
+    // console.log('jobs : ', jobs);
+    
 
     if(!jobs || jobs.length === 0){
       return res.status(404).json({
@@ -142,6 +145,51 @@ const getAcceptedJob = async(req, res, next)=>{// teknisi
     next(error)
   }
 }
+
+const checkedJob = async(req, res, next)=>{
+  try {
+    const {jobId} = req.params
+    const job = await jobsCollection.findOne({
+      _id: jobId,
+      status: 'transport fee paid'
+    })
+    if(!job){
+      return res.status(404).json({
+        message: 'Job tidak ditemukan'
+      })
+    }
+    job.status = 'checked'
+    await job.save()
+    res.status(200).json({
+      message: 'job sudah diperiksa oleh teknisi'
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
+// const addPriceToJob = async(req, res, next)=>{
+//   try {
+//     const {jobId} = req.params
+//     const {price} = req.body
+//     const job = await jobsCollection.findOne({
+//       _id: jobId,
+//       status: 'checked'
+//     })
+//     if(!job){
+//       return res.status(404).json({
+//         message: 'Job tidak ditemukan'
+//       })
+//     }
+//     job.price = price
+//     await job.save()
+//     res.status(200).json({
+//       message: 'berhasil menambahkan harga ke job'
+//     })
+//   } catch (error) {
+//     next(error)
+//   }
+// }
 
 const getJobHistory = async(req, res, next)=>{// teknisi
   try {
@@ -310,6 +358,8 @@ export {
   getAllJob, 
   getDetailJob, 
   getJobHistory,
+  checkedJob,
+  // addPriceToJob,
   // applyJob, 
   getJobByUser, 
   // chooseTechnician, 

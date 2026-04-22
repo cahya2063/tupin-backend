@@ -1,12 +1,12 @@
 import express from 'express'
-import { checkBalance, createInvoice, createPayout, createTransactionGateway, deleteInvoice, getInvoices, handleXenditWebhooksInvoices, handleXenditWebhooksPayout } from '../controllers/payment.js'
+import { checkBalance, createInvoice, createPayout, deleteInvoice, getInvoices, handleXenditWebhooksInvoices, handleXenditWebhooksPayout } from '../controllers/payment.js'
 import { getPayoutsChannels } from '../services/xendit.service.js'
 import { authRole } from '../middleware/auth.js'
 
 const paymentRouter = express.Router()
 
 
-paymentRouter.post('/create-payment',authRole(['client']), createTransactionGateway)
+// paymentRouter.post('/create-payment',authRole(['client']), createTransactionGateway)
 
 // paymentRouter.post('/create-subaccount', createSubAccount)
 // paymentRouter.post('/create-splitrule', createSplitRule)

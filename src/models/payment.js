@@ -17,6 +17,11 @@ const paymentSchema = new mongoos.Schema({
         type: Object,
         required: false
     },
+    type: {
+        type: String,
+        enum: ['repair', 'transportation'],
+        default: 'transportation'
+    },
     payerId: {
         type: String,
         required: true,
