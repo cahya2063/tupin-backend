@@ -2,10 +2,11 @@ import midtransClient from 'midtrans-client';
 // import { createDynamicSplitRule, createInvoiceRequest, createSplitRuleRequest, createSubAccountRequest } from '../services/xendit.service.js'
 import axios from "axios";
 import paymentCollection from '../models/payment.js';
-import { checkBalanceRequest, createPayoutRequest, createInvoicesRequest, createTransferRequest, getInvoiceRequest, getPayoutsChannels } from '../services/xendit.service.js';
+import { checkBalanceRequest, createPayoutRequest, createInvoicesRequest, createTransferRequest, getInvoiceRequest, getPayoutsChannels, getTransferRequest } from '../services/xendit.service.js';
 import userCollection from '../models/users.js';
 import payoutCollection from '../models/payout.js';
 import jobsCollection from '../models/jobs.js';
+import transfersCollection from '../models/transfer.js';
 // Create Snap API instance
 let snap = new midtransClient.Snap({
   isProduction: false,
@@ -118,7 +119,7 @@ const createInvoice = async (req, res, next) => { // client
       subAccountId: technician.subAccountId,
       amount,
       payer_email,
-      description: `Pembayaran jasa perbaikan ${job.title}`
+      description: job.status == 'open'?`Pembayaran transportasi ${job.title}`: `Pembayaran jasa perbaikan ${job.title}`
     }
     const invoice = await createInvoicesRequest(payload)
     console.log('berhasil membayar : ', invoice); 
@@ -141,7 +142,8 @@ const createInvoice = async (req, res, next) => { // client
       })
     }
     else if (job.status == 'checked') {
-
+      job.status = 'pending repair payment'
+      await job.save()
       await paymentCollection.create({
         invoiceId: invoice.id,
         externalId: externalId,
@@ -227,6 +229,7 @@ const createTransfer = async(jobId)=>{
       jobId: jobId,
       status: 'PAID'
     })
+
     const payload = {
       reference: referenceId,
       amount: payment.amount,
@@ -244,6 +247,65 @@ const createTransfer = async(jobId)=>{
     return res.status(404).json({
       success: false,
       message: 'pembayaran untuk job ini tidak ditemukan atau belum dibayar'
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+const getTransfer = async(req, res, next)=>{
+  try {
+    const {receiverId} = req.params
+    
+    const payments = await paymentCollection.find({
+      receiverId: receiverId,
+      status: 'PAID'
+    })
+    
+    if(!payments){
+      return res.status(404).json({
+        success: false,
+        message: 'pembayaran untuk job ini tidak ditemukan atau belum dibayar'
+      })
+    }
+    const paymentIds = payments.map(p => p._id)
+
+    const paymentMap = new Map(
+      payments.map(p => [p._id.toString(), p])
+    )
+
+    const transfers = await transfersCollection.find({
+      paymentId: { $in: paymentIds },
+      status: 'SUCCESSFUL'
+    })
+    
+    const transfersRequest = transfers.map(async (transfer) => {
+      const transferDetail = await getTransferRequest(transfer.referenceId)
+
+      const payment = paymentMap.get(transfer.paymentId.toString())
+
+      return {
+        ...transferDetail, // data dari Xendit
+        
+          paymentId: transfer.paymentId,
+          jobId: payment?.jobId,
+          type: payment?.type,
+          amount: transfer.amount
+        
+      }
+    })
+    const transferResults = await Promise.all(transfersRequest)
+
+    // console.log('transfer request : ', transfersRequest);
+    
+    if(!transfers){
+      return res.status(404).json({
+        success: false,
+        message: 'transfer untuk job ini tidak ditemukan'
+      })
+    }
+    return res.status(200).json({
+      success: true,
+      transfers: transferResults
     })
   } catch (error) {
     next(error)
@@ -351,30 +413,30 @@ const createPayout = async(req, res, next)=>{// teknisi
 
 
 
-const deleteInvoice = async (req, res, next)=>{
-  try {
-    const {externalId} = req.params
+// const deleteInvoice = async (req, res, next)=>{
+//   try {
+//     const {externalId} = req.params
 
-    const invoice = await paymentCollection.findOne({
-      externalId: externalId
-    })
-    if(!invoice){
-      return res.status(404).json({
-        success: false,
-        message: 'invoice tidak ditemukan'
-      })
-    }
-    invoice.isClientDelete = true
-    await invoice.save()
+//     const invoice = await paymentCollection.findOne({
+//       externalId: externalId
+//     })
+//     if(!invoice){
+//       return res.status(404).json({
+//         success: false,
+//         message: 'invoice tidak ditemukan'
+//       })
+//     }
+//     invoice.isClientDelete = true
+//     await invoice.save()
 
-    return res.status(200).json({
-      success: true,
-      message: 'invoice berhasil di hapus dari riwayat Pembayaran'
-    })
-  } catch (error) {
-    next(error)
-  }
-}
+//     return res.status(200).json({
+//       success: true,
+//       message: 'invoice berhasil di hapus dari riwayat Pembayaran'
+//     })
+//   } catch (error) {
+//     next(error)
+//   }
+// }
 
 
 // =========================
@@ -398,11 +460,11 @@ const handleXenditWebhooksInvoices = async (req, res) => {// xendit execution
 
     const job = await jobsCollection.findById(payment.jobId)
 
-    if(event.status == 'PAID' && payment.type === 'transportation' && job.status == 'open'){
+    if(event.status == 'PAID' && payment.type === 'transportation' && job.status == 'pending transport fee'){
       job.status = 'transport fee paid'
       await job.save()
     }
-    else if(event.status == 'PAID' && payment.type === 'repair' && job.status == 'checked'){
+    else if(event.status == 'PAID' && payment.type === 'repair' && job.status == 'pending repair payment'){
       job.status = 'repair paid'
       await job.save()
     }
@@ -447,7 +509,8 @@ export {
     createPayout,
     getInvoices,
     createTransfer,
-    deleteInvoice,
+    getTransfer,
+    // deleteInvoice,
     handleXenditWebhooksPayout
     // createInvoice,
     // createSubAccount,
