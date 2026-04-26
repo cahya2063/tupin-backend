@@ -17,7 +17,7 @@ jobsRouter.post('/:jobId/checked-job', authRole(['client']), checkedJob)
 // jobsRouter.post('/:jobId/add-price', authRole(['client']), addPriceToJob)
 // jobsRouter.post('/:jobId/technician-request',authRole(['technician']), technicianRequest)
 // jobsRouter.post('/:jobId/approve-job-request',authRole(['technician']), approveJobRequest)
-jobsRouter.post('/:jobId/done-job',authRole(['technician']), doneJob)
+jobsRouter.post('/:jobId/done-job',authRole(['client']), doneJob)
 jobsRouter.post('/:jobId/is-job-completed',authRole(['client']), isJobCompleted)
 jobsRouter.post('/:jobId/cancel-jobs',authRole(['technician', 'client']), cancelJobs)
 

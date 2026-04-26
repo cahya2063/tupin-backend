@@ -55,7 +55,18 @@ const createTransferRequest = async(body)=>{
     const response = await client.post(`transfers`, body)
     return response.data
   } catch (error) {
-    next(error)
+    console.error(error);
+    
+  }
+}
+
+const getTransferRequest = async(referenceId)=>{
+  try {
+    const response = await client.get(`transfers/reference=${referenceId}`)
+    return response.data
+  } catch (error) {
+    console.error(error);
+    
   }
 }
 const checkBalanceRequest = async(subAccountId)=>{// teknisi
@@ -135,6 +146,7 @@ export {
     getPayoutsChannels,
     checkBalanceRequest,
     createTransferRequest,
+    getTransferRequest,
     createPayoutRequest,
     createInvoicesRequest,
     getInvoiceRequest

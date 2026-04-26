@@ -5,6 +5,8 @@ import { createNotification } from "./notification.js";
 import axios from "axios";
 import paymentCollection from "../models/payment.js";
 import { createTransfer } from "./payment.js";
+import { createTransferRequest } from "../services/xendit.service.js";
+import transfersCollection from "../models/transfer.js";
 
 const ObjectId = mongoose.Types.ObjectId
 
@@ -149,15 +151,46 @@ const getAcceptedJob = async(req, res, next)=>{// teknisi
 const checkedJob = async(req, res, next)=>{
   try {
     const {jobId} = req.params
+    const referenceId = `trf-${Date.now()}`
+    const sourceUserId = process.env.PLATFORM_ACCOUNT_ID
     const job = await jobsCollection.findOne({
       _id: jobId,
       status: 'transport fee paid'
     })
+    const payment = await paymentCollection.findOne({
+      jobId: job._id,
+      type: 'transportation',
+      status: 'PAID'
+    })
+    if(!payment){
+      return res.status(400).json({
+        message: 'transport fee belum dibayar'
+      })
+    }
     if(!job){
       return res.status(404).json({
         message: 'Job tidak ditemukan'
       })
     }
+    const payload = {
+      reference: referenceId,
+      amount: payment.amount,
+      source_user_id: sourceUserId,
+      destination_user_id: payment.subAccountId
+    }
+
+    const transfer = await createTransferRequest(payload)
+    if(transfer.status != 'SUCCESSFUL'){
+      return res.status(500).json({
+        message: 'gagal melakukan transfer ke teknisi'
+      })
+    }
+    await transfersCollection.create({
+      referenceId: transfer.reference,
+      status: transfer.status,
+      amount: transfer.amount,
+      paymentId: payment._id
+    })
     job.status = 'checked'
     await job.save()
     res.status(200).json({
@@ -168,28 +201,7 @@ const checkedJob = async(req, res, next)=>{
   }
 }
 
-// const addPriceToJob = async(req, res, next)=>{
-//   try {
-//     const {jobId} = req.params
-//     const {price} = req.body
-//     const job = await jobsCollection.findOne({
-//       _id: jobId,
-//       status: 'checked'
-//     })
-//     if(!job){
-//       return res.status(404).json({
-//         message: 'Job tidak ditemukan'
-//       })
-//     }
-//     job.price = price
-//     await job.save()
-//     res.status(200).json({
-//       message: 'berhasil menambahkan harga ke job'
-//     })
-//   } catch (error) {
-//     next(error)
-//   }
-// }
+
 
 const getJobHistory = async(req, res, next)=>{// teknisi
   try {
@@ -222,7 +234,7 @@ const doneJob = async(req, res, next)=>{// teknisi
   const {jobId} = req.params
   const job = await jobsCollection.findOne({
     _id: jobId,
-    status: 'paid'
+    status: 'repair paid'
   })
 
   if(!job){
@@ -230,11 +242,37 @@ const doneJob = async(req, res, next)=>{// teknisi
       message: 'job tidak ditemukan'
     })
   }
-
   
   const technician = await userCollection.findById(job.selectedTechnician)
   const client = await userCollection.findById(job.idCreator)
+  const payment = await paymentCollection.findOne({
+    jobId: job._id,
+    type: 'repair',
+    status: 'PAID'
+  })
 
+  const referenceId = `trf-${Date.now()}`
+  const sourceUserId = process.env.PLATFORM_ACCOUNT_ID
+
+  const payload = {
+    reference: referenceId,
+    amount: payment.amount,
+    source_user_id: sourceUserId,
+    destination_user_id: payment.subAccountId
+  }
+
+  const transfer = await createTransferRequest(payload)
+  if(transfer.status != 'SUCCESSFUL'){
+    return res.status(500).json({
+      message: 'gagal melakukan transfer ke teknisi'
+    })
+  }
+  await transfersCollection.create({
+    referenceId: transfer.reference,
+    status: transfer.status,
+    amount: transfer.amount,
+    paymentId: payment._id
+  })
   job.status = 'done'
   job.save()
 
