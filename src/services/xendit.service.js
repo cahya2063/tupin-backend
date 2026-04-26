@@ -114,13 +114,13 @@ const getPayoutsChannels = async(channel_name)=>{// teknisi
 
 
 
-const createPayoutRequest = async(body)=>{// teknisi
+const createDisbursementsRequest = async(body)=>{// teknisi
   try {
     
     const {reference_id, subAccountId} = body
     
     
-    const response = await client.post('/v2/payouts', 
+    const response = await client.post('/disbursements', 
       body,
       {
         headers: {
@@ -137,6 +137,24 @@ const createPayoutRequest = async(body)=>{// teknisi
   }
 }
 
+const getDisbursementsRequest = async(payoutId, subAccountId)=>{
+  try {
+    console.log('payoutId : ', payoutId);
+    
+    const response = await client.get(`/disbursements/${payoutId}`, {
+      headers: {
+        'for-user-id': subAccountId
+      }
+    })
+
+    console.log('response payout : ', response);
+    
+    return response.data
+  } catch (error) {
+    console.log(error);    
+  }
+}
+
 
 
 
@@ -147,7 +165,8 @@ export {
     checkBalanceRequest,
     createTransferRequest,
     getTransferRequest,
-    createPayoutRequest,
+    createDisbursementsRequest,
+    getDisbursementsRequest,
     createInvoicesRequest,
     getInvoiceRequest
     // createInvoiceRequest, 

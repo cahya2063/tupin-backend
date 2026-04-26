@@ -4,6 +4,10 @@ const payoutSchema = new mongoos.Schema({
         type: String,
         required: true
     },
+    technicianId: {
+        type: String,
+        required: true
+    },
     amount: {
         type: Number,
         required: true
@@ -14,7 +18,7 @@ const payoutSchema = new mongoos.Schema({
     },
     currency: {
         type: String,
-        required: true
+        required: false
     },
     referenceId: {
         type: String,
