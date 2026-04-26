@@ -2,16 +2,16 @@ import midtransClient from 'midtrans-client';
 // import { createDynamicSplitRule, createInvoiceRequest, createSplitRuleRequest, createSubAccountRequest } from '../services/xendit.service.js'
 import axios from "axios";
 import paymentCollection from '../models/payment.js';
-import { checkBalanceRequest, createPayoutRequest, createInvoicesRequest, createTransferRequest, getInvoiceRequest, getPayoutsChannels, getTransferRequest } from '../services/xendit.service.js';
+import { checkBalanceRequest, createInvoicesRequest, createTransferRequest, getInvoiceRequest, getPayoutsChannels, getTransferRequest, createDisbursementsRequest, getDisbursementsRequest } from '../services/xendit.service.js';
 import userCollection from '../models/users.js';
 import payoutCollection from '../models/payout.js';
 import jobsCollection from '../models/jobs.js';
 import transfersCollection from '../models/transfer.js';
 // Create Snap API instance
-let snap = new midtransClient.Snap({
-  isProduction: false,
-  serverKey: process.env.MIDTRANS_SERVER_KEY,
-});
+// let snap = new midtransClient.Snap({
+//   isProduction: false,
+//   serverKey: process.env.MIDTRANS_SERVER_KEY,
+// });
 
 const baseUrl = process.env.XENDIT_API_BASE;
 const auth = {
@@ -330,11 +330,11 @@ const checkBalance = async (req, res, next)=>{ // teknisi
 
 
 
-const createPayout = async(req, res, next)=>{// teknisi
+const createDisbursements = async(req, res, next)=>{// teknisi
   try {
     
     const {technicianId, amount, channelName, accountNumber}= req.body
-    const referenceId = `payout-${Date.now()}`
+    const referenceId = `disb-${Date.now()}`
     const channelCode = `ID_${channelName}`
     console.log(`debug payout : ${technicianId}, ${amount}, ${channelCode}`);
 
@@ -373,28 +373,40 @@ const createPayout = async(req, res, next)=>{// teknisi
       })
     }
     
+    // const payload = {
+    //   reference_id: referenceId,
+    //   subAccountId: technician.subAccountId,
+    //   channel_code: paymentChannels[0].channel_code,
+    //   channel_properties: {
+    //     account_number: accountNumber,
+    //     account_holder_name: technician.nama
+    //   },
+    //   description: `Payout untuk teknisi ${technician.nama}`,
+    //   amount: amount,
+    //   description: `Payout untuk teknisi ${technician.nama}`,
+    //   currency: "IDR"
+    // }
     const payload = {
       reference_id: referenceId,
       subAccountId: technician.subAccountId,
-      channel_code: paymentChannels[0].channel_code,
-      channel_properties: {
-        account_number: accountNumber,
-        account_holder_name: technician.nama
-      },
-      amount: amount,
+      external_id: referenceId,
+      bank_code: channelName,
+      account_holder_name: technician.nama,
+      account_number: accountNumber,
       description: `Payout untuk teknisi ${technician.nama}`,
-      currency: "IDR"
+      amount: amount
     }
 
-    const payout = await createPayoutRequest(payload)
+    const payout = await createDisbursementsRequest(payload)
     console.log('payout : ', payout);
 
     payoutCollection.create({
       payoutId: payout.id,
+      technicianId: technician._id,
       amount: payout.amount,
-      channelCode: payout.channel_code,
-      currency: payout.currency,
-      referenceId: payout.reference_id,
+      channelCode: payout.bank_code,
+      // currency: payout.currency,
+      referenceId: payout.external_id,
       status: payout.status
     })
 
@@ -411,37 +423,45 @@ const createPayout = async(req, res, next)=>{// teknisi
   }
 }
 
+const getDisbursements = async(req, res, next)=>{
+  try {
+    const {technicianId} = req.params
+    const payouts = await payoutCollection.find({technicianId: technicianId})
+    if(!payouts){
+      return res.status(404).json({
+        success: false,
+        message: 'payout untuk teknisi ini tidak ditemukan'
+      })
+    }
+    console.log('payouts : ', payouts);
+    
+    const payoutDetails = payouts.map(async (payout) => {
+      const technician = await userCollection.findById(payout.technicianId)
+
+      return await getDisbursementsRequest(
+        payout.payoutId,
+        technician.subAccountId
+      )
+    })
+
+    const resolvedPayoutDetails = await Promise.all(payoutDetails);
+
+    console.log('payouts detail : ', resolvedPayoutDetails);
+    
+    return res.status(200).json({
+      success: true,
+      disbursements: resolvedPayoutDetails
+    });
+
+  } catch (error) {
+    next(error)
+  }
+}
 
 
-// const deleteInvoice = async (req, res, next)=>{
-//   try {
-//     const {externalId} = req.params
-
-//     const invoice = await paymentCollection.findOne({
-//       externalId: externalId
-//     })
-//     if(!invoice){
-//       return res.status(404).json({
-//         success: false,
-//         message: 'invoice tidak ditemukan'
-//       })
-//     }
-//     invoice.isClientDelete = true
-//     await invoice.save()
-
-//     return res.status(200).json({
-//       success: true,
-//       message: 'invoice berhasil di hapus dari riwayat Pembayaran'
-//     })
-//   } catch (error) {
-//     next(error)
-//   }
-// }
 
 
-// =========================
-// XENDIT WEBHOOK → TRANSFER 95%
-// =========================
+
 const handleXenditWebhooksInvoices = async (req, res) => {// xendit execution
   // try {
     const event = req.body;
@@ -469,29 +489,20 @@ const handleXenditWebhooksInvoices = async (req, res) => {// xendit execution
       await job.save()
     }
 
-    // console.log('payment : ', payment);
-    
-
-    // if(!payment){
-    //   return res.status(404).send("Payment not found");
-    // }
-
-    // payment.status = event.status;
-
-    // await payment.save();
 
     return res.status(200).send("OK");
 
-  // } catch (err) {
-  //   // console.error("WEBHOOK ERROR:", err.response?.data || err.message);
-  //   return res.status(500).send("ERR");
-  // }
+
 };
 
 const handleXenditWebhooksPayout = async (req, res)=>{
   try {
     console.log('event : ', req.body);
-    
+    const payout = await payoutCollection.findOne({
+      referenceId: req.body.external_id
+    })
+    payout.status = req.body.status
+    await payout.save()
     return res.status(200).send("OK");
   } catch (error) {
     return res.status(500).send("ERR");
@@ -501,18 +512,14 @@ const handleXenditWebhooksPayout = async (req, res)=>{
 
 
 export {
-    // createTransactionGateway,
     checkBalance,
-    // createSplitRule,
     createInvoice,
     handleXenditWebhooksInvoices,
-    createPayout,
+    createDisbursements,
+    getDisbursements,
     getInvoices,
     createTransfer,
     getTransfer,
-    // deleteInvoice,
     handleXenditWebhooksPayout
-    // createInvoice,
-    // createSubAccount,
-    // handleXenditWebhooks
+
 }
