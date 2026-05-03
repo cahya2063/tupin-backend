@@ -10,14 +10,14 @@ const paymentRouter = express.Router()
 
 // paymentRouter.post('/create-subaccount', createSubAccount)
 // paymentRouter.post('/create-splitrule', createSplitRule)
-paymentRouter.get('/check-balance/:subAccountId',authRole(['technician']), checkBalance)
+paymentRouter.get('/check-balance/:subAccountId',authRole(['technician', 'client']), checkBalance)
 paymentRouter.post('/create-invoice',authRole(['technician']), createInvoice)
 paymentRouter.get('/get-invoice/:userId',authRole(['client']), getInvoices)
-paymentRouter.get('/get-transfers/:receiverId', authRole(['technician', 'client']), getTransfer)
+paymentRouter.get('/get-transfers/', authRole(['technician', 'client']), getTransfer)
 // paymentRouter.delete('/delete-invoice/:externalId', authRole(['client']), deleteInvoice)
 // paymentRouter.post('/create-invoice', createInvoice)
-paymentRouter.post('/create-disbursements',authRole(['technician']), createDisbursements)
-paymentRouter.get('/get-disbursements/:technicianId', authRole(['technician']), getDisbursements)
+paymentRouter.post('/create-disbursements',authRole(['technician', 'client']), createDisbursements)
+paymentRouter.get('/get-disbursements/:technicianId', authRole(['technician', 'client']), getDisbursements)
 
 paymentRouter.get('/get-payout-channels', getPayoutsChannels)
 

@@ -6,6 +6,7 @@ import routes from './routes/index.js';
 import cors from 'cors'
 import http from 'http'
 import { Server } from 'socket.io';
+import { autoTransfer } from './controllers/payment.js';
 
 
 const app = express()
@@ -74,7 +75,9 @@ app.use((err, req, res, next) => {
     })
 })
 
-server.listen(port, ()=>{
+// setInterval(autoTransfer, 10000);
+
+server.listen(port, ()=>{    
     console.log(`Server is running on http://localhost:${port}`);
 })
 

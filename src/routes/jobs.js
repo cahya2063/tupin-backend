@@ -1,5 +1,5 @@
 import express from 'express'
-import { addJob, cancelJobs, checkedJob, doneJob, getAcceptedJob, getAllJob, getDetailJob, getJobByUser, getJobHistory, isJobCompleted } from '../controllers/jobs.js'
+import { addJob, cancelJobs, checkedJob, claimWarranty, doneJob, getAcceptedJob, getAllJob, getDetailJob, getJobByUser, getJobHistory, isJobCompleted } from '../controllers/jobs.js'
 import upload from '../middleware/upload.js'
 import { authRole } from '../middleware/auth.js'
 
@@ -18,6 +18,7 @@ jobsRouter.post('/:jobId/checked-job', authRole(['client']), checkedJob)
 // jobsRouter.post('/:jobId/technician-request',authRole(['technician']), technicianRequest)
 // jobsRouter.post('/:jobId/approve-job-request',authRole(['technician']), approveJobRequest)
 jobsRouter.post('/:jobId/done-job',authRole(['client']), doneJob)
+jobsRouter.post('/:jobId/claim-warranty',authRole(['client']), claimWarranty)
 jobsRouter.post('/:jobId/is-job-completed',authRole(['client']), isJobCompleted)
 jobsRouter.post('/:jobId/cancel-jobs',authRole(['technician', 'client']), cancelJobs)
 

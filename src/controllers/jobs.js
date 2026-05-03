@@ -5,8 +5,7 @@ import { createNotification } from "./notification.js";
 import axios from "axios";
 import paymentCollection from "../models/payment.js";
 import { createTransfer } from "./payment.js";
-import { createTransferRequest } from "../services/xendit.service.js";
-import transfersCollection from "../models/transfer.js";
+
 
 const ObjectId = mongoose.Types.ObjectId
 
@@ -98,7 +97,8 @@ const getDetailJob = async (req, res, next)=>{// teknisi, client
 
 const getJobByUser = async (req, res, next)=>{ // client
   try {
-    const {userId} = req.params
+    // const {userId} = req.params
+    const userId = req.user.id
     const jobs = await jobsCollection.find({idCreator: userId})
 
     if(!jobs || jobs.length === 0){
@@ -117,14 +117,14 @@ const getJobByUser = async (req, res, next)=>{ // client
 
 const getAcceptedJob = async(req, res, next)=>{// teknisi
   try {
-    const {technicianId} = req.params
+    const technicianId = req.user.id
     const jobs = await jobsCollection.find({selectedTechnician: technicianId})
     
     jobs.forEach((job)=>{
       const payment = paymentCollection.findOne({
         jobId: job._id
       })
-      // console.log('payment : ', payment);
+      // perbarui status job
       if(payment.status == 'PAID' && payment.type === 'transportation' && job.status == 'pending transport fee'){
         job.status = 'transport fee paid'
         job.save()
@@ -151,8 +151,7 @@ const getAcceptedJob = async(req, res, next)=>{// teknisi
 const checkedJob = async(req, res, next)=>{
   try {
     const {jobId} = req.params
-    const referenceId = `trf-${Date.now()}`
-    const sourceUserId = process.env.PLATFORM_ACCOUNT_ID
+    
     const job = await jobsCollection.findOne({
       _id: jobId,
       status: 'transport fee paid'
@@ -172,25 +171,9 @@ const checkedJob = async(req, res, next)=>{
         message: 'Job tidak ditemukan'
       })
     }
-    const payload = {
-      reference: referenceId,
-      amount: payment.amount,
-      source_user_id: sourceUserId,
-      destination_user_id: payment.subAccountId
-    }
 
-    const transfer = await createTransferRequest(payload)
-    if(transfer.status != 'SUCCESSFUL'){
-      return res.status(500).json({
-        message: 'gagal melakukan transfer ke teknisi'
-      })
-    }
-    await transfersCollection.create({
-      referenceId: transfer.reference,
-      status: transfer.status,
-      amount: transfer.amount,
-      paymentId: payment._id
-    })
+    await createTransfer(job._id, job.selectedTechnician, 'transportation')
+    
     job.status = 'checked'
     await job.save()
     res.status(200).json({
@@ -203,7 +186,7 @@ const checkedJob = async(req, res, next)=>{
 
 
 
-const getJobHistory = async(req, res, next)=>{// teknisi
+const getJobHistory = async(req, res, next)=>{// client
   try {
     const {technicianId} = req.params
     const jobs = await jobsCollection.find({
@@ -245,35 +228,9 @@ const doneJob = async(req, res, next)=>{// teknisi
   
   const technician = await userCollection.findById(job.selectedTechnician)
   const client = await userCollection.findById(job.idCreator)
-  const payment = await paymentCollection.findOne({
-    jobId: job._id,
-    type: 'repair',
-    status: 'PAID'
-  })
-
-  const referenceId = `trf-${Date.now()}`
-  const sourceUserId = process.env.PLATFORM_ACCOUNT_ID
-
-  const payload = {
-    reference: referenceId,
-    amount: payment.amount,
-    source_user_id: sourceUserId,
-    destination_user_id: payment.subAccountId
-  }
-
-  const transfer = await createTransferRequest(payload)
-  if(transfer.status != 'SUCCESSFUL'){
-    return res.status(500).json({
-      message: 'gagal melakukan transfer ke teknisi'
-    })
-  }
-  await transfersCollection.create({
-    referenceId: transfer.reference,
-    status: transfer.status,
-    amount: transfer.amount,
-    paymentId: payment._id
-  })
-  job.status = 'done'
+  
+  job.status = 'warranty'
+  job.jobDoneDate = Date.now()
   job.save()
 
   // buat notifikasi client
@@ -286,7 +243,38 @@ const doneJob = async(req, res, next)=>{// teknisi
     message: 'berhasil menyelesaikan job'
   })
 }
-const isJobCompleted = async(req, res, next)=>{// client
+
+const claimWarranty = async(req, res, next)=>{
+  try {
+    const {jobId} = req.params
+    console.log('jobId : ', jobId);
+    
+    const job = await jobsCollection.findOne({
+      _id: jobId,
+      status: 'warranty'
+    })
+    const client = await userCollection.findById(job.idCreator)
+    
+    if(!job){
+      return res.status(404).json({
+        message: 'job tidak ditemukan'
+      })
+    }
+    await createTransfer(job._id, client._id, 'cashback')
+    job.status = 'completed'
+    job.isTransfered = true
+    job.save()
+    
+    createNotification(client.id, jobId, `klaim garansi untuk ${job.title} berhasil, uang akan dikembalikan ke akun kamu`)
+    return res.status(200).json({
+      success: true,
+      message: 'berhasil klaim garansi, uang akan dikembalikan ke akun kamu',
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+const isJobCompleted = async(req, res, next)=>{// (server) tidak jadi
   try {
     const {jobId} = req.params
     const {status} = req.body
@@ -294,7 +282,7 @@ const isJobCompleted = async(req, res, next)=>{// client
     
     const job = await jobsCollection.findOne({
       _id: jobId,
-      status: 'done'
+      status: 'warranty'
     })
 
     if(!job){
@@ -323,7 +311,7 @@ const isJobCompleted = async(req, res, next)=>{// client
       job.status = 'completed'
       job.save()
 
-      await createTransfer(job._id)
+      await createTransfer(job._id, technician._id, 'payment')
 
       // notifikasi ke teknisi
       createNotification(technician.id, jobId, `selamat pekerjaanmu pada ${job.title} telah selesai dan dikonfirmasi oleh client ${client.nama}`)
@@ -363,24 +351,8 @@ const cancelJobs = async (req, res, next)=>{// teknisi, client
       })
     }
     
-
-    // const technicianId = job.selectedTechnician
-    // const clientId = job.idCreator
-
     job.status = 'canceled'
-    // job.selectedTechnician = null
     await job.save()
-
-    // const chat = await chatCollection.findOneAndDelete({
-    //   clientId: clientId,
-    //   technicianId: technicianId
-    // })
-
-    // if(chat){
-    //   await messageCollection.deleteMany({
-    //     chatId: chat._id
-    //   })
-    // }
 
     return res.status(200).json({
       message: 'berhasil cancel job'
@@ -405,6 +377,7 @@ export {
   // technicianRequest, 
   // approveJobRequest,
   doneJob,
+  claimWarranty,
   isJobCompleted,
   cancelJobs
 }

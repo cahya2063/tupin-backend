@@ -13,6 +13,15 @@ const transfersSchema = new mongoos.Schema({
         type: String,
         required: true
     },
+    type: {
+        type: String,
+        enum: ['payment', 'cashback'],
+        default: 'payment'
+    },
+    receiverId: {
+        type: String,
+        required: false
+    },
     amount: {
         type: Number,
         required: true

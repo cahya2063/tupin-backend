@@ -11,6 +11,11 @@ const shippingCost = axios.create({
         'x-api-key': process.env.SHIPPING_COST_API_KEY
     }
 })
+const posCode = axios.create({
+    headers: {
+        'User-Agent': 'fixify-app/1.0 (cahya200603@gmail.com)'
+    }
+})
 
 
 
@@ -34,7 +39,7 @@ const calculateShippingCost = async(req, res, next)=>{
         const jobs = await jobsCollection.findById(jobId)
         const technician = await userCollection.findById(technicianId)
 
-        const query = `https://api-sandbox.collaborator.komerce.id/tariff/api/v1/calculate?shipper_destination_id=${technician.receiverLocation.destinationId}&receiver_destination_id=${jobs.destination.destinationId}&weight=10&item_value=100000&cod=no&origin_pin_point=${technician.location.coordinates[1]}%2C${technician.location.coordinates[0]}&destination_pin_point=${jobs.location.lat}%2C${jobs.location.lng}`
+        const query = `https://api-sandbox.collaborator.komerce.id/tariff/api/v1/calculate?shipper_destination_id=${jobs.destination.destinationId}&receiver_destination_id=${technician.receiverLocation.destinationId}&weight=10&item_value=100000&cod=no&origin_pin_point=${jobs.location.lat}%2C${jobs.location.lng}&destination_pin_point=${technician.location.coordinates[1]}%2C${technician.location.coordinates[0]}`
         
         const response = await shippingCost.get(query)
 
@@ -44,6 +49,19 @@ const calculateShippingCost = async(req, res, next)=>{
         })
     } catch (error) {
         next(error)
+    }
+}
+const getPosCode = async(req, res, next)=>{
+    try {
+        const {lat, lon} = req.body
+        const response = await posCode.get(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}6&format=json`)
+        return res.json({
+            success: true,
+            location: response.data
+        })
+        
+    } catch (error) {
+        
     }
 }
 // const getProvinceRequest = async(req, res, next)=>{
@@ -108,4 +126,5 @@ export{
     getDestinationRequest,
     getNearestTechnician,
     calculateShippingCost,
+    getPosCode
 }
