@@ -50,14 +50,7 @@ const paymentSchema = new mongoos.Schema({
         type: String, 
         required: false,
     },
-    isClientDelete: {
-        type: Boolean,
-        default: false
-    },
-    isTechnicianDelete: {
-        type: Boolean,
-        default: false
-    }
+
 })
 
 const paymentCollection = mongoos.model('payments', paymentSchema)

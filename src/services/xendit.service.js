@@ -41,7 +41,6 @@ const createSubAccountRequest = async(body)=>{ // teknisi register
 
 const createInvoicesRequest = async(body)=>{ // client
   const response = await client.post(`/v2/invoices`, body)
-    console.log('response : ', response.data);
     return response.data
 }
 

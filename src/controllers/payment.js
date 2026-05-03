@@ -137,7 +137,7 @@ const createInvoice = async (req, res, next) => { // client
         receiverId: receiverId,
         subAccountId: technician.subAccountId,
         amount: invoice.amount,
-        status: invoice.status
+        status: invoice.status,
   
       })
     }
@@ -153,7 +153,7 @@ const createInvoice = async (req, res, next) => { // client
         receiverId: receiverId,
         subAccountId: technician.subAccountId,
         amount: invoice.amount,
-        status: invoice.status
+        status: invoice.status,
   
       })
     }
@@ -199,8 +199,7 @@ const getInvoices = async (req, res, next) => {// client
         payment_channel: invoice.payment_channel,
         description: invoice.description,
         url: invoice.invoice_url,
-        isClientDelete: data.isClientDelete,
-        isTechnicianDelete: data.isTechnicianDelete
+
       }
     })
     const results = await Promise.all(payments)
@@ -212,54 +211,61 @@ const getInvoices = async (req, res, next) => {// client
 
   } catch (error) {
     console.error(error.response?.data || error.message)
-    // return res.status(404).json({
-    //   success: false,
-    //   message: error.message
-    // })
+
     next(error)
   }
 }
 
-const createTransfer = async(jobId)=>{
+const createTransfer = async(jobId, receiverId, type)=>{
   try {
     const referenceId = `trf-${Date.now()}`
     const sourceUserId = process.env.PLATFORM_ACCOUNT_ID
 
+    const user = await userCollection.findById(receiverId)
     const payment = await paymentCollection.findOne({
       jobId: jobId,
-      status: 'PAID'
+      type: type == 'cashback' ? 'repair' : 'transportation',
+      status: { $in: ['PAID', 'SETTLED'] }
     })
 
     const payload = {
       reference: referenceId,
       amount: payment.amount,
       source_user_id: sourceUserId,
-      destination_user_id: payment.subAccountId
+      destination_user_id: user.subAccountId
     }
     if(payment){
       const transfer = await createTransferRequest(payload)
-      console.log('transfer : ', transfer);
-      return res.status(200).json({
-        success: true,
-        transfer
+      await transfersCollection.create({
+        referenceId: transfer.reference,
+        status: transfer.status,
+        paymentId: payment._id,
+        receiverId: receiverId,
+        type: type == 'cashback'? 'cashback' : 'payment',
+        amount: transfer.amount
       })
+      
     }
-    return res.status(404).json({
-      success: false,
-      message: 'pembayaran untuk job ini tidak ditemukan atau belum dibayar'
-    })
+  
   } catch (error) {
-    next(error)
+    console.error('error transfer : ', error);
+    
   }
 }
 const getTransfer = async(req, res, next)=>{
   try {
-    const {receiverId} = req.params
+    const userId = req.user.id;
+    const role = req.user.role;
+
+    
+
+    // const user = await userCollection.findById(userId)
+    const field = role === 'technician' ? 'receiverId' : 'payerId';
     
     const payments = await paymentCollection.find({
-      receiverId: receiverId,
+      [field]: userId,
       status: 'PAID'
-    })
+    })    
     
     if(!payments){
       return res.status(404).json({
@@ -275,6 +281,7 @@ const getTransfer = async(req, res, next)=>{
 
     const transfers = await transfersCollection.find({
       paymentId: { $in: paymentIds },
+      receiverId: userId,
       status: 'SUCCESSFUL'
     })
     
@@ -289,7 +296,8 @@ const getTransfer = async(req, res, next)=>{
           paymentId: transfer.paymentId,
           jobId: payment?.jobId,
           type: payment?.type,
-          amount: transfer.amount
+          amount: transfer.amount,
+          // receiverId: payment?.receiverId
         
       }
     })
@@ -311,6 +319,7 @@ const getTransfer = async(req, res, next)=>{
     next(error)
   }
 }
+
 
 const checkBalance = async (req, res, next)=>{ // teknisi
   try {
@@ -373,19 +382,8 @@ const createDisbursements = async(req, res, next)=>{// teknisi
       })
     }
     
-    // const payload = {
-    //   reference_id: referenceId,
-    //   subAccountId: technician.subAccountId,
-    //   channel_code: paymentChannels[0].channel_code,
-    //   channel_properties: {
-    //     account_number: accountNumber,
-    //     account_holder_name: technician.nama
-    //   },
-    //   description: `Payout untuk teknisi ${technician.nama}`,
-    //   amount: amount,
-    //   description: `Payout untuk teknisi ${technician.nama}`,
-    //   currency: "IDR"
-    // }
+    const date = new Date()
+    
     const payload = {
       reference_id: referenceId,
       subAccountId: technician.subAccountId,
@@ -393,7 +391,7 @@ const createDisbursements = async(req, res, next)=>{// teknisi
       bank_code: channelName,
       account_holder_name: technician.nama,
       account_number: accountNumber,
-      description: `Payout untuk teknisi ${technician.nama}`,
+      description: `Payout tgl ${date.toLocaleDateString()}`,
       amount: amount
     }
 
@@ -458,7 +456,69 @@ const getDisbursements = async(req, res, next)=>{
   }
 }
 
+const autoTransfer = async()=>{
+  try {
+    const referenceId = `trf-${Date.now()}`
+    const sourceUserId = process.env.PLATFORM_ACCOUNT_ID
+    console.log('Cek job untuk auto transfer...');
 
+    const FOUR_DAYS = 4 * 24 * 60 * 60 * 1000;
+    const nowDays = new Date()
+    const fourDaysAgo = new Date(nowDays.getTime() - FOUR_DAYS)
+
+    console.log('for days ago', fourDaysAgo);
+    const jobs = await jobsCollection.find({
+      status: 'warranty',
+      jobDoneDate: { $lte: fourDaysAgo },
+      isTransfered: false
+    });
+    
+    
+    for (const job of jobs) {
+
+      // antisipasi double transfer
+      const locked = await jobsCollection.findOneAndUpdate(
+        { _id: job._id, isTransfered: false },
+        { isTransfered: true, status: 'completed' },
+        { new: true }
+      );
+
+      if (!locked) continue;
+
+      const payment = await paymentCollection.findOne({
+        jobId: job._id,
+        status: 'PAID',
+        type: 'repair'
+      });
+      const technician = await userCollection.findById(job.selectedTechnician)
+
+      if (!payment) {
+        console.log('Payment belum ada / belum PAID');
+        continue;
+      }
+      const payload = {
+        reference: referenceId,
+        amount: payment.amount,
+        source_user_id: sourceUserId,
+        destination_user_id: technician.subAccountId
+      }
+      const transfer = await createTransferRequest(payload)
+      await transfersCollection.create({
+        referenceId: transfer.reference,
+        status: transfer.status,
+        paymentId: payment._id,
+        receiverId: technician._id,
+        type: 'payment',
+        amount: transfer.amount
+      })
+
+      console.log('data payment : ', payment);
+    }
+  } catch (error) {
+    console.error('terjadi kesalahan : ', error);
+    
+  }
+}
 
 
 
@@ -520,6 +580,7 @@ export {
     getInvoices,
     createTransfer,
     getTransfer,
+    autoTransfer,
     handleXenditWebhooksPayout
 
 }
