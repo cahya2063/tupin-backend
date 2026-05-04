@@ -39,7 +39,7 @@ const io = new Server(server, {
     }
 })
 
-//event koneksi
+//trigger saat ada user terhubung ke server
 io.on('connection', (socket)=>{
     // console.log('user connected : ', socket.id);
 
@@ -47,8 +47,6 @@ io.on('connection', (socket)=>{
     socket.on('join_room', (chatId)=>{
         socket.join(chatId)
         // console.log(`user ${socket.id} join room ${chatId}`);
-
-        
     })
 
     socket.on('send_message', (data)=>{
@@ -56,13 +54,24 @@ io.on('connection', (socket)=>{
         
         // kirim pesan ke user yang satu room
         io.to(data.chatId).emit('receive_message', data)
-
     })
-
     socket.on('disconnect', ()=>{
         // console.log('user disconected : ', socket.id);
         
     })
+
+    // mengelompokkan teknisi di room tertentu
+    // di trigger dari frontend
+    socket.on('register', ({ userId, role }) => {
+        if (role === 'technician') {
+            // agar bisa kirim update ke teknisi tertentu saja
+            socket.join(`technician:${userId}`);
+        }else if(role == 'client'){
+            socket.join(`client:${userId}`)
+        }
+    });
+
+
 
     
 })

@@ -7,6 +7,8 @@ import userCollection from '../models/users.js';
 import payoutCollection from '../models/payout.js';
 import jobsCollection from '../models/jobs.js';
 import transfersCollection from '../models/transfer.js';
+import { io } from '../index.js';
+import { emitToJobParties } from '../utils/tools.js';
 // Create Snap API instance
 // let snap = new midtransClient.Snap({
 //   isProduction: false,
@@ -92,7 +94,7 @@ const client = axios.create({
 
 
 
-const createInvoice = async (req, res, next) => { // client
+const createInvoice = async (req, res, next) => { // technician
   try {
     const { subAccountId, amount, payer_email, jobId, payerId, receiverId, jobStatus } = req.body;
     const externalId = `inv-${Date.now()}`
@@ -122,7 +124,7 @@ const createInvoice = async (req, res, next) => { // client
       description: job.status == 'open'?`Pembayaran transportasi ${job.title}`: `Pembayaran jasa perbaikan ${job.title}`
     }
     const invoice = await createInvoicesRequest(payload)
-    console.log('berhasil membayar : ', invoice); 
+    console.log('berhasil buat invoice : ', invoice); 
 
     if(jobStatus == 'open'){
 
@@ -140,6 +142,11 @@ const createInvoice = async (req, res, next) => { // client
         status: invoice.status,
   
       })
+
+      emitToJobParties('job:pending-transport', job, {
+        jobId: job._id,
+        status: job.status
+      })
     }
     else if (job.status == 'checked') {
       job.status = 'pending repair payment'
@@ -155,6 +162,10 @@ const createInvoice = async (req, res, next) => { // client
         amount: invoice.amount,
         status: invoice.status,
   
+      })
+      emitToJobParties('job:pending-repair', job, {
+        jobId: job._id,
+        status: job.status
       })
     }
 
@@ -403,7 +414,6 @@ const createDisbursements = async(req, res, next)=>{// teknisi
       technicianId: technician._id,
       amount: payout.amount,
       channelCode: payout.bank_code,
-      // currency: payout.currency,
       referenceId: payout.external_id,
       status: payout.status
     })
@@ -543,17 +553,35 @@ const handleXenditWebhooksInvoices = async (req, res) => {// xendit execution
     if(event.status == 'PAID' && payment.type === 'transportation' && job.status == 'pending transport fee'){
       job.status = 'transport fee paid'
       await job.save()
+
+      emitToJobParties('job:paid-transport', job, {
+        jobId: job._id,
+        status: job.status
+      })
     }
     else if(event.status == 'PAID' && payment.type === 'repair' && job.status == 'pending repair payment'){
       job.status = 'repair paid'
       await job.save()
+      emitToJobParties('job:paid-repair', job, {
+        jobId: job._id,
+        status: job.status
+      })
     }
-
-
     return res.status(200).send("OK");
 
 
 };
+
+const handleXenditWebhookRefund = async(req, res, next)=>{
+  try {
+    const event = req.body
+    console.log('refund : ', event);
+    
+    return res.status(200).send("OK");
+  } catch (error) {
+    return res.status(500).send("ERR");
+  }
+}
 
 const handleXenditWebhooksPayout = async (req, res)=>{
   try {
@@ -581,6 +609,7 @@ export {
     createTransfer,
     getTransfer,
     autoTransfer,
+    handleXenditWebhookRefund,
     handleXenditWebhooksPayout
 
 }

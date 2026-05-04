@@ -23,6 +23,7 @@ const getDestinationRequest = async(req, res, next)=>{
     try {
         const { postCode } = req.params
         const response = await destination.get(`https://rajaongkir.komerce.id/api/v1/destination/domestic-destination?search=${postCode}`)
+        
         return res.json({
             success: true,
             destination: response.data
