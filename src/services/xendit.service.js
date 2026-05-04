@@ -111,7 +111,23 @@ const getPayoutsChannels = async(channel_name)=>{// teknisi
   }
 }
 
-
+const refundPayment = async(body)=>{
+  try {
+    const response = await client.post('/refunds',
+      body,
+      {
+        headers: {
+          'for-user-id' : body.subAccountId,
+        }
+      }
+    )
+    console.log('refund request : ', response.data);
+    
+  } catch (error) {
+    console.error('error : ', error);
+    
+  }
+}
 
 const createDisbursementsRequest = async(body)=>{// teknisi
   try {

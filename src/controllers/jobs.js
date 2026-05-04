@@ -5,6 +5,8 @@ import { createNotification } from "./notification.js";
 import axios from "axios";
 import paymentCollection from "../models/payment.js";
 import { createTransfer } from "./payment.js";
+import { io } from "../index.js";
+import { emitToJobParties } from "../utils/tools.js";
 
 
 const ObjectId = mongoose.Types.ObjectId
@@ -33,6 +35,9 @@ const addJob = async (req, res) => { // client
       
   
       const result = await jobsCollection.create(newJob);
+
+      // kirim event ke teknisi tertentu
+      io.to(`technician:${data.selectedTechnician}`).emit('job:created', result);
       const client = await userCollection.findById(data.userId);
       const technician = await userCollection.findById(data.selectedTechnician)
       const job = result;
@@ -176,6 +181,12 @@ const checkedJob = async(req, res, next)=>{
     
     job.status = 'checked'
     await job.save()
+
+    emitToJobParties('job:checked', job, {
+      jobId: job._id,
+      status: job.status
+    })
+    
     res.status(200).json({
       message: 'job sudah diperiksa oleh teknisi'
     })
@@ -184,6 +195,40 @@ const checkedJob = async(req, res, next)=>{
   }
 }
 
+const doneJob = async(req, res, next)=>{// teknisi
+  const {jobId} = req.params
+  const job = await jobsCollection.findOne({
+    _id: jobId,
+    status: 'repair paid'
+  })
+
+  if(!job){
+    res.status(404).json({
+      message: 'job tidak ditemukan'
+    })
+  }
+  
+  const technician = await userCollection.findById(job.selectedTechnician)
+  const client = await userCollection.findById(job.idCreator)
+  
+  job.status = 'warranty'
+  job.jobDoneDate = Date.now()
+  await job.save()
+  emitToJobParties('job:done', job, {
+    jobId: job._id,
+    status: job.status
+  })
+
+  // buat notifikasi client
+  createNotification(client.id, jobId, `teknisi ${technician.nama} sudah menyelesaikan ${job.title} konfirmasi pada kami jika alatmu sudah selesai`)
+
+  // buat notifikasi teknisi
+  createNotification(technician.id, jobId, `tunggu client mengkonfirmasi jika ${job.title} sudah selesai`)
+
+  res.status(200).json({
+    message: 'berhasil menyelesaikan job'
+  })
+}
 
 
 const getJobHistory = async(req, res, next)=>{// client
@@ -213,67 +258,9 @@ const getJobHistory = async(req, res, next)=>{// client
 
 
 
-const doneJob = async(req, res, next)=>{// teknisi
-  const {jobId} = req.params
-  const job = await jobsCollection.findOne({
-    _id: jobId,
-    status: 'repair paid'
-  })
 
-  if(!job){
-    res.status(404).json({
-      message: 'job tidak ditemukan'
-    })
-  }
-  
-  const technician = await userCollection.findById(job.selectedTechnician)
-  const client = await userCollection.findById(job.idCreator)
-  
-  job.status = 'warranty'
-  job.jobDoneDate = Date.now()
-  job.save()
 
-  // buat notifikasi client
-  createNotification(client.id, jobId, `teknisi ${technician.nama} sudah menyelesaikan ${job.title} konfirmasi pada kami jika alatmu sudah selesai`)
 
-  // buat notifikasi teknisi
-  createNotification(technician.id, jobId, `tunggu client mengkonfirmasi jika ${job.title} sudah selesai`)
-
-  res.status(200).json({
-    message: 'berhasil menyelesaikan job'
-  })
-}
-
-const claimWarranty = async(req, res, next)=>{
-  try {
-    const {jobId} = req.params
-    console.log('jobId : ', jobId);
-    
-    const job = await jobsCollection.findOne({
-      _id: jobId,
-      status: 'warranty'
-    })
-    const client = await userCollection.findById(job.idCreator)
-    
-    if(!job){
-      return res.status(404).json({
-        message: 'job tidak ditemukan'
-      })
-    }
-    await createTransfer(job._id, client._id, 'cashback')
-    job.status = 'completed'
-    job.isTransfered = true
-    job.save()
-    
-    createNotification(client.id, jobId, `klaim garansi untuk ${job.title} berhasil, uang akan dikembalikan ke akun kamu`)
-    return res.status(200).json({
-      success: true,
-      message: 'berhasil klaim garansi, uang akan dikembalikan ke akun kamu',
-    })
-  } catch (error) {
-    next(error)
-  }
-}
 const isJobCompleted = async(req, res, next)=>{// (server) tidak jadi
   try {
     const {jobId} = req.params
@@ -377,7 +364,6 @@ export {
   // technicianRequest, 
   // approveJobRequest,
   doneJob,
-  claimWarranty,
   isJobCompleted,
   cancelJobs
 }

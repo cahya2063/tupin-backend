@@ -11,9 +11,10 @@ import chatRouter from './chat.js';
 import messageRouter from './message.js';
 import reviewRouter from './review.js';
 import paymentRouter from './payment.js';
-import { handleXenditWebhooksInvoices, handleXenditWebhooksPayout } from '../controllers/payment.js';
+import { handleXenditWebhookRefund, handleXenditWebhooksInvoices, handleXenditWebhooksPayout } from '../controllers/payment.js';
 import ongkirRouter from './ongkir.js';
 import { getNearestTechnician } from '../services/ongkir.service.js';
+import warrantyRouter from './warranty.js';
 const routes = express.Router();
 
 routes.post('/signup', postSignupClient);
@@ -27,11 +28,13 @@ routes.use('/chats', authMiddleware, chatRouter)
 routes.use('/messages', authMiddleware, messageRouter)
 routes.use('/review', authMiddleware, reviewRouter)
 routes.use('/payment', authMiddleware, paymentRouter)
+routes.use('/warranty', authMiddleware, warrantyRouter)
 routes.post('/nearest-technician', authMiddleware, getNearestTechnician)
 routes.use('/ongkir', authMiddleware, ongkirRouter)
 
 routes.post('/xendit-webhooks', handleXenditWebhooksInvoices)
 routes.post('/xendit-webhooks-payout', handleXenditWebhooksPayout)
+routes.post('/xendit-webhooks-refund', handleXenditWebhookRefund)
 routes.get('/', (req, res) => {
   res.json({
     message: 'Hello World'

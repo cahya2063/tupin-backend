@@ -48,6 +48,7 @@ const createMessage = async (req, res, next)=>{// client, teknisi
     
         }
         await newMessage.save()
+        
         // kirim pesan real-time ke room chat
         io.to(chatId).emit('receive_message', newMessage)
         
