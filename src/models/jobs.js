@@ -54,6 +54,37 @@ const jobsSchema = new mongoos.Schema({
     isTransfered: {
         type: Boolean,
         default: false
+    },
+    jobCancel: {
+        cancelBy: {
+            type: String,
+            required: false
+        },
+        category: {
+            type: String,
+            enum: [
+                // teknisi
+                'skill_mismatch',
+                'distance_too_far',
+                'not_available',
+                'negotiation_failed',
+                'client_unresponsive',
+                
+                // client
+                'found_other_technician',
+                'price_too_high',
+                'no_longer_needed'
+            ],
+            required: false
+        },
+        note: {
+            type: String,
+            required: false
+        },
+        canceledAt: {
+            type: Date,
+            required: false
+        }
     }
 })
 

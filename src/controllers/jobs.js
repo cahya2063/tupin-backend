@@ -256,98 +256,38 @@ const getJobHistory = async(req, res, next)=>{// client
   }
 }
 
-
-
-
-
-
-const isJobCompleted = async(req, res, next)=>{// (server) tidak jadi
-  try {
-    const {jobId} = req.params
-    const {status} = req.body
-    console.log('status : ', req.body);
-    
-    const job = await jobsCollection.findOne({
-      _id: jobId,
-      status: 'warranty'
-    })
-
-    if(!job){
-      res.status(404).json({
-        message: 'job tidak ditemukan'
-      })
-    }
-
-    const technician = await userCollection.findById(job.selectedTechnician)
-    const client = await userCollection.findById(job.idCreator)
-    
-    if(status === 'uncompleted'){
-      job.status = 'paid'
-      job.save()
-      //notifikasi ke teknisi
-      createNotification(technician.id, jobId, `kata client kamu belum menyelesaikan pekerjaan ${job.title}`)
-
-      //notifikasi ke client
-      createNotification(client.id, jobId, `berhasil mengkonfirmasi bahwa alat belum selesai dan memberitahu teknisi ${technician.nama}`)
-
-      return res.status(200).json({
-        message: `berhasil mengkonfirmasi job ${job.title} belum selesai`
-      })
-    }
-    else if(status === 'completed'){
-      job.status = 'completed'
-      job.save()
-
-      await createTransfer(job._id, technician._id, 'payment')
-
-      // notifikasi ke teknisi
-      createNotification(technician.id, jobId, `selamat pekerjaanmu pada ${job.title} telah selesai dan dikonfirmasi oleh client ${client.nama}`)
-
-      // notifikasi ke client
-      createNotification(client.id, jobId, `berhasil mengkonfirmasi job selesai dan memberi tahu teknisi ${technician.nama}`)
-
-      res.status(200).json({
-        message: 'berhasil mengkonfirmasi job selesai'
-      })
-    }
-    else{
-      res.status(400).json({
-        message: 'request status tidak valid'
-      })
-    }
-  } catch (error) {
-    next(error)
-  }
-  
-}
-const cancelJobs = async (req, res, next)=>{// teknisi, client
+const cancelJobs = async (req, res, next)=>{// teknisi
   try {
     
     const {jobId} = req.params
+    const {category, note} = req.body
     const job = await jobsCollection.findById(jobId)
     if(!job){
       return res.status(404).json({
         message: 'data job tidak ditemukan'
       })
     }
-
-    if(!job.selectedTechnician){
-      
-      return res.status(400).json({
-        message: 'job ini belum memilih teknisi',
-      })
-    }
     
     job.status = 'canceled'
+    job.jobCancel = {
+      cancelBy: req.user.id,
+      category: category,
+      note: note,
+      canceledAt: Date.now()
+    }
     await job.save()
+    emitToJobParties('job:canceled', job, {
+      jobId: job._id,
+      status: job.status
+    })
 
+    createNotification(job._id, job.idCreator, `teknisi menolak pengajuan perbaikan karena ${note}`)
     return res.status(200).json({
       message: 'berhasil cancel job'
     })
   } catch (error) {
     next(error)
   }
-  
 }
 
 export {
@@ -356,14 +296,8 @@ export {
   getDetailJob, 
   getJobHistory,
   checkedJob,
-  // addPriceToJob,
-  // applyJob, 
   getJobByUser, 
-  // chooseTechnician, 
   getAcceptedJob, 
-  // technicianRequest, 
-  // approveJobRequest,
   doneJob,
-  isJobCompleted,
   cancelJobs
 }
