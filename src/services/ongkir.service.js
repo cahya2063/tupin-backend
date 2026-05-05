@@ -35,10 +35,12 @@ const getDestinationRequest = async(req, res, next)=>{
 
 const calculateShippingCost = async(req, res, next)=>{
     try {
-        const {jobId, technicianId} = req.body
+        const {jobId} = req.params
 
         const jobs = await jobsCollection.findById(jobId)
-        const technician = await userCollection.findById(technicianId)
+        const technician = await userCollection.findById(jobs.selectedTechnician)
+        console.log('technician : ', technician);
+        
 
         const query = `https://api-sandbox.collaborator.komerce.id/tariff/api/v1/calculate?shipper_destination_id=${jobs.destination.destinationId}&receiver_destination_id=${technician.receiverLocation.destinationId}&weight=10&item_value=100000&cod=no&origin_pin_point=${jobs.location.lat}%2C${jobs.location.lng}&destination_pin_point=${technician.location.coordinates[1]}%2C${technician.location.coordinates[0]}`
         

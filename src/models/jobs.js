@@ -71,9 +71,9 @@ const jobsSchema = new mongoos.Schema({
                 'client_unresponsive',
                 
                 // client
-                'found_other_technician',
+                'repair_not_worth_it', // kerusakan terlalu parah
                 'price_too_high',
-                'no_longer_needed'
+                'changed_mind_after_inspection' // berubah pikiran
             ],
             required: false
         },

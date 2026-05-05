@@ -500,6 +500,7 @@ const autoTransfer = async()=>{
         status: 'PAID',
         type: 'repair'
       });
+      
       const technician = await userCollection.findById(job.selectedTechnician)
 
       if (!payment) {
