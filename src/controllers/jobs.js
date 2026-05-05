@@ -267,24 +267,42 @@ const cancelJobs = async (req, res, next)=>{// teknisi
         message: 'data job tidak ditemukan'
       })
     }
-    
+     // status yang boleh cancel
+    const allowedStatuses = ['open', 'transport fee paid']
+    if (!allowedStatuses.includes(job.status)) {
+      return res.status(400).json({
+        message: 'Job tidak bisa dibatalkan pada status ini'
+      })
+    }
+    if (job.status === 'transport fee paid') {
+      await createTransfer(job._id, job.selectedTechnician, 'transportation')
+    }
     job.status = 'canceled'
     job.jobCancel = {
       cancelBy: req.user.id,
-      category: category,
-      note: note,
-      canceledAt: Date.now()
+      category,
+      note,
+      canceledAt: new Date()
     }
+
     await job.save()
+
     emitToJobParties('job:canceled', job, {
       jobId: job._id,
       status: job.status
     })
 
-    createNotification(job._id, job.idCreator, `teknisi menolak pengajuan perbaikan karena ${note}`)
+    createNotification(
+      job._id,
+      job.idCreator,
+      `Berhasil melakukan cancel perbaikan`
+    )
+
     return res.status(200).json({
       message: 'berhasil cancel job'
     })
+
+    
   } catch (error) {
     next(error)
   }
