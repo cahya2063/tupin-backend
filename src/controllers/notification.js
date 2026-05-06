@@ -1,4 +1,5 @@
 import notificationCollection from "../models/notification.js"
+import nodemailer from 'nodemailer'
 
 const getNotificationsByUser = async(req, res, next)=>{// client, teknisi
     try {
@@ -56,4 +57,57 @@ const deleteNotification = async(req, res, next)=>{// client, teknisi
     }
 }
 
-export {getNotificationsByUser, createNotification, readNotification, deleteNotification}
+async function sendEmailRegistrationFirstStep(destinationEmail){
+    try {
+        const transport = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: 'fixifymultiservis@gmail.com',
+                pass: 'nrhougusoqlzgxhp'
+            }
+        })
+
+        await transport.sendMail({
+            from: '"Fixify Multi Servis" <fixifymultiservis@gmail.com>',
+            to: destinationEmail,
+            subject: 'Pendaftaran Berhasil 🎉',
+            html: `
+                <div style="font-family: Arial, sans-serif; background:#f4f4f4; padding:20px;">
+                    <div style="max-width:600px; margin:auto; background:white; padding:20px; border-radius:10px;">
+                        
+                        <h2 style="color:#4CAF50; text-align:center;">
+                            🎉 Pendaftaran Berhasil!
+                        </h2>
+
+                        <p style="font-size:16px; color:#333;">
+                            Halo 👋,
+                        </p>
+
+                        <p style="font-size:15px; color:#555;">
+                            Terima kasih sudah mendaftar di <b>Fixify Multi Servis</b>.
+                            Saat ini akun kamu sedang diproses.
+                        </p>
+
+                        <p style="font-size:15px; color:#555;">
+                            Silakan tunggu email aktivasi dari kami ya.
+                        </p>
+
+                        
+
+                        <hr/>
+
+                        <p style="font-size:12px; color:#999; text-align:center;">
+                            Email ini dikirim otomatis, mohon tidak membalas.
+                        </p>
+                    </div>
+                </div>
+            `
+        })
+        console.log('email berhasil dikirim');
+    } catch (error) {
+        console.error(error);
+    }
+}
+
+
+export {getNotificationsByUser, createNotification, readNotification, deleteNotification, sendEmailRegistrationFirstStep}
