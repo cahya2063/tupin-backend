@@ -2,9 +2,10 @@ import userCollection from '../models/users.js';
 import { createSubAccountRequest } from '../services/xendit.service.js';
 import { encrypt } from '../utils/bcrypt.js';
 import registerValidation from '../validation/register.js';
+import { sendEmailRegistrationFirstStep } from './notification.js';
 // import { createSplitRule } from './payment.js';
 
-const postSignupClient = async (req, res) => {// client, teknisi
+const postSignupClient = async (req, res) => {// client
   const validasi = registerValidation(req.body);
   if (validasi?.status === false) {
     return res.status(400).json({
@@ -35,7 +36,7 @@ const postSignupClient = async (req, res) => {// client, teknisi
   });
 };
 
-const postSignupTechncian = async (req, res)=>{
+const signupTechncianFirstStep = async (req, res, next)=>{ // technician
   try {
     const validasi = registerValidation(req.body);
     if (validasi?.status === false) {
@@ -54,33 +55,32 @@ const postSignupTechncian = async (req, res)=>{
       });
     }
 
-    const newUser = {
+    const newTechnician = {
       nama: validasi.data.nama,
       email: validasi.data.email,
-      password: await encrypt(String(validasi.data.password)),
-    };
+      phone_number: validasi.data.phone_number,
+      city: validasi.data.city,
 
-    const technicianSubAccount = await createSubAccountRequest({
-      type: 'OWNED',
-      business_email: validasi.data.email,
-      business_name: validasi.data.nama,
-    })
+      skills: validasi.data.skills,
+      description: validasi.data.description,
 
-    // const splitRule = await createSplitRule(technicianSubAccount.id)
-    
-    newUser.subAccountId = technicianSubAccount.id;
-    // newUser.split_rule_id = splitRule.id
-    newUser.role = 'technician'
-    // untuk menyimpan ke database
-    await userCollection.insertMany([newUser]);
+      role: 'technician',
+      status: 'pending',
+      ratings: 0,
+    }
+    await userCollection.insertOne(newTechnician)
+    await sendEmailRegistrationFirstStep('cronosstar007@gmail.com')
     res.status(201).json({
-      message: 'registrasi teknisi berhasil',
-    });
+      message: 'pendaftaran berhasil tunggu email dari kami ya!!'
+    })
   } catch (error) {
-    console.log('error: ', error);
+    next(error)
     
   }
-  
-  
 }
-export { postSignupClient, postSignupTechncian };
+
+const signUpTechnicianVerification = async(req, res, next)=>{
+
+}
+
+export { postSignupClient, signupTechncianFirstStep };

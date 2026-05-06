@@ -4,8 +4,8 @@ import { authRole } from '../middleware/auth.js'
 
 const skillRouter = express.Router()
 
-skillRouter.get('/', authRole(['client']),getAllSkills)
-skillRouter.get('/:id', authRole(['client']), getSkillById)
+skillRouter.get('/',getAllSkills)
+skillRouter.get('/:id', authRole(['client', 'admin']), getSkillById)
 export {skillRouter}
 
 

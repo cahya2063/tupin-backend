@@ -11,7 +11,7 @@ const logInSchema = new mongoos.Schema({
   },
   password: {
     type: String,
-    required: true,
+    required: false,
   },
   phone_number: {
     type: Number,
@@ -66,6 +66,11 @@ const logInSchema = new mongoos.Schema({
     type: String,
     enum: ['technician', 'client', 'admin'], // daftar role yg valid
     default: 'client',                     // default role
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'approve', 'rejected'],
+    default: 'pending'
   },
   location: {
     type: {
