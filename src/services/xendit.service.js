@@ -12,19 +12,20 @@ const client = axios.create({
 const createSubAccountRequest = async(body)=>{ // teknisi register
   try {
     
+    console.log('body sub accunt : ', body);
+    
     const response = await client.post('/v2/accounts', {
-      email: body.business_email,
+      email: body.email,
       type: body.type,
       public_profile: {
         business_name: body.business_name,
-        description: 'pembuatan sub account teknisi',
       }
     });
     console.log('subaccount : ', response.data);
     
     return response.data
   } catch (error) {
-    return console.log('error : ', error.message);
+    return console.log('error : ', error);
   }
 }
 // const createSplitRuleRequest = async(body)=>{ //teknisi register
