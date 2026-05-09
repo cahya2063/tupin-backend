@@ -235,7 +235,7 @@ const createTransfer = async(jobId, receiverId, type)=>{
     const user = await userCollection.findById(receiverId)
     const payment = await paymentCollection.findOne({
       jobId: jobId,
-      type: type == 'cashback' ? 'repair' : 'transportation',
+      type: type == 'transfer' ? 'repair' : 'transportation',
       status: { $in: ['PAID', 'SETTLED'] }
     })
 
@@ -245,6 +245,7 @@ const createTransfer = async(jobId, receiverId, type)=>{
       source_user_id: sourceUserId,
       destination_user_id: user.subAccountId
     }
+    
     if(payment){
       const transfer = await createTransferRequest(payload)
       await transfersCollection.create({
@@ -252,7 +253,7 @@ const createTransfer = async(jobId, receiverId, type)=>{
         status: transfer.status,
         paymentId: payment._id,
         receiverId: receiverId,
-        type: type == 'cashback'? 'cashback' : 'payment',
+        type: type == 'transfer'? 'payment' : 'cashback',
         amount: transfer.amount
       })
       

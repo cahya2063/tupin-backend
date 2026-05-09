@@ -15,7 +15,7 @@ const warrantySchema = new mongoos.Schema({
     },
     status: {
         type: String,
-        enum: ['claimed', 'approved', 'rejected', 'refunded', 'repairing'],
+        enum: ['claimed', 'repairing', 'rejected', 'done'],
         default: 'claimed'
     },
     refundAmount: {
