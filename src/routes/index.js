@@ -1,5 +1,5 @@
 import express from 'express';
-import { postSignupClient, signupTechncianFirstStep } from '../controllers/register.js';
+import { activateTechnician, postSignupClient, signupTechncianFirstStep } from '../controllers/register.js';
 import mongoos from '../utils/db.js';
 import {authMiddleware} from '../middleware/auth.js';
 import { postLogin } from '../controllers/login.js';
@@ -19,6 +19,7 @@ const routes = express.Router();
 
 routes.post('/signup', postSignupClient);
 routes.post('/signup-tech', signupTechncianFirstStep);
+routes.post('/technician/activate', activateTechnician);
 routes.post('/signin', postLogin)
 routes.use('/profile', authMiddleware, profileRouter)
 routes.use('/jobs', authMiddleware, jobsRouter)

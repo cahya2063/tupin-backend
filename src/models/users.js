@@ -1,3 +1,4 @@
+import { type } from 'os';
 import mongoos from '../utils/db.js';
 
 const logInSchema = new mongoos.Schema({
@@ -64,10 +65,10 @@ const logInSchema = new mongoos.Schema({
   },
   role: {
     type: String,
-    enum: ['technician', 'client', 'admin'], // daftar role yg valid
-    default: 'client',                     // default role
+    enum: ['technician', 'client', 'admin'], 
+    default: 'client',                     
   },
-  status: {
+  status: { // technician
     type: String,
     enum: ['pending', 'approve', 'rejected'],
     default: 'pending'
@@ -93,6 +94,14 @@ const logInSchema = new mongoos.Schema({
   },
   account_number: {
     type: String,
+    required: false
+  },
+  activationToken: {
+    type: String,
+    required: false
+  },
+  activationExpired: {
+    type: Date,
     required: false
   }
 });
