@@ -45,43 +45,43 @@ const registerValidation = (dt) => {
   }
 
   // PHONE
-  // if (validator.isEmpty(data.phone_number)) {
-  //   return {
-  //     status: false,
-  //     message: 'Nomor HP wajib diisi'
-  //   }
-  // }
+  if (validator.isEmpty(data.phone_number)) {
+    return {
+      status: false,
+      message: 'Nomor HP wajib diisi'
+    }
+  }
 
-  // if (!validator.isMobilePhone(data.phone_number, 'id-ID')) {
-  //   return {
-  //     status: false,
-  //     message: 'Nomor HP tidak valid'
-  //   }
-  // }
+  if (!validator.isMobilePhone(data.phone_number, 'id-ID')) {
+    return {
+      status: false,
+      message: 'Nomor HP tidak valid'
+    }
+  }
 
   // CITY
-  // if (validator.isEmpty(data.city)) {
-  //   return {
-  //     status: false,
-  //     message: 'Kota wajib diisi'
-  //   }
-  // }
+  if (validator.isEmpty(data.city)) {
+    return {
+      status: false,
+      message: 'Kota wajib diisi'
+    }
+  }
 
   // SKILLS (minimal 1)
-  // if (!data.skills || data.skills.length === 0) {
-  //   return {
-  //     status: false,
-  //     message: 'Minimal pilih 1 skill'
-  //   }
-  // }
+  if (!data.skills || data.skills.length === 0) {
+    return {
+      status: false,
+      message: 'Minimal pilih 1 skill'
+    }
+  }
 
   // DESCRIPTION (optional tapi bagus)
-  // if (data.description && !validator.isLength(data.description, { min: 10 })) {
-  //   return {
-  //     status: false,
-  //     message: 'Deskripsi minimal 10 karakter'
-  //   }
-  // }
+  if (data.description && !validator.isLength(data.description, { min: 10 })) {
+    return {
+      status: false,
+      message: 'Deskripsi minimal 10 karakter'
+    }
+  }
 
   return {
     status: true,
