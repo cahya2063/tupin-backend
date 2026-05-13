@@ -490,7 +490,7 @@ const autoTransfer = async()=>{
       // antisipasi double transfer
       const locked = await jobsCollection.findOneAndUpdate(
         { _id: job._id, isTransfered: false },
-        { isTransfered: true, status: 'completed' },
+        { isTransfered: true, status: 'warranty' },
         { new: true }
       );
 
@@ -523,6 +523,9 @@ const autoTransfer = async()=>{
         type: 'payment',
         amount: transfer.amount
       })
+
+      job.status = 'completed'
+      job.save()
 
       console.log('data payment : ', payment);
     }

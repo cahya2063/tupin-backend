@@ -5,36 +5,6 @@ import { emitToJobParties } from "../utils/tools.js";
 import { createNotification } from "./notification.js";
 import { createTransfer } from "./payment.js";
 
-// const claimWarranty = async(req, res, next)=>{
-//   try {
-//     const {jobId} = req.params
-//     console.log('jobId : ', jobId);
-    
-//     const job = await jobsCollection.findOne({
-//       _id: jobId,
-//       status: 'warranty'
-//     })
-//     const client = await userCollection.findById(job.idCreator)
-    
-//     if(!job){
-//       return res.status(404).json({
-//         message: 'job tidak ditemukan'
-//       })
-//     }
-//     await createTransfer(job._id, client._id, 'cashback')
-//     job.status = 'completed'
-//     job.isTransfered = true
-//     job.save()
-    
-//     createNotification(client.id, jobId, `klaim garansi untuk ${job.title} berhasil, uang akan dikembalikan ke akun kamu`)
-//     return res.status(200).json({
-//       success: true,
-//       message: 'berhasil klaim garansi, uang akan dikembalikan ke akun kamu',
-//     })
-//   } catch (error) {
-//     next(error)
-//   }
-// }
 
 const createWarranty = async(req, res, next)=>{
     try {
@@ -55,8 +25,8 @@ const createWarranty = async(req, res, next)=>{
             const job = await jobsCollection.findOne({
                 _id: newWarranty.jobId
             })
-            job.status = 'completed'
-            await job.save()
+            // job.status = 'completed'
+            // await job.save()
             emitToJobParties('job:completed', job, {
                 jobId: job._id,
                 status: job.status
@@ -65,7 +35,6 @@ const createWarranty = async(req, res, next)=>{
             createNotification(job.idCreator, job._id, `berhasil mengajukan ke job ${job.title}`)
 
             if(addWarranty){
-
                 res.status(201).json({
                     message: "berhasil mengajukan garansi",
                 });
@@ -74,6 +43,28 @@ const createWarranty = async(req, res, next)=>{
     } catch (error) {
         next(error)
         
+    }
+}
+
+const getWarrantiesByJobId = async(req, res, next)=>{
+    try {
+        const {jobId} = req.params
+        const warranty = await warrantyCollection.findOne({
+            jobId: jobId
+        })
+        if(!warranty){
+            res.status(404).json({
+                success: false,
+                message: 'data garansi tidak ditemukan'
+            })
+        }
+
+        res.status(200).json({
+            success: true,
+            warranty: warranty
+        })
+    } catch (error) {
+        next(error)
     }
 }
 
@@ -87,7 +78,6 @@ const getWarranties = async(req, res, next)=>{
                 {selectedTechnician: userId},
                 {idCreator: userId}
                 ],
-                status: 'completed'
             })
 
             const jobIds = jobs.map(job => job._id)
@@ -147,7 +137,10 @@ const doneWarranty = async(req, res, next)=>{
         })
     }
     warranty.status = 'done'
+    warranty.isResolved = true
     warranty.save()
+    job.status = 'completed'
+    job.save()
     await createTransfer(job._id, job.selectedTechnician, 'transfer')
     emitToJobParties('warranty:done', job, {
       warrantyId: warranty._id,
@@ -171,17 +164,23 @@ const rejectWarranty = async(req, res, next)=>{
         })
     }
     warranty.status = 'rejected'
+    warranty.isResolved = true
     warranty.save()
+    job.status = 'completed'
+    job.save()
     await createTransfer(job._id, job.idCreator, 'transfer')
     emitToJobParties('warranty:reject', job, {
       warrantyId: warranty._id,
       status: warranty.status
     })
 }
+
+
 export {
     // claimWarranty,
     createWarranty,
     getWarranties,
+    getWarrantiesByJobId,
     approveWarranties,
     doneWarranty,
     rejectWarranty
