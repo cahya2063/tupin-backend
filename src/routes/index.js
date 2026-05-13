@@ -15,6 +15,7 @@ import { handleXenditWebhookRefund, handleXenditWebhooksInvoices, handleXenditWe
 import ongkirRouter from './ongkir.js';
 import { getNearestTechnician } from '../services/ongkir.service.js';
 import warrantyRouter from './warranty.js';
+import reportsRouter from './reports.js';
 const routes = express.Router();
 
 routes.post('/signup', postSignupClient);
@@ -31,6 +32,7 @@ routes.use('/messages', authMiddleware, messageRouter)
 routes.use('/review', authMiddleware, reviewRouter)
 routes.use('/payment', authMiddleware, paymentRouter)
 routes.use('/warranty', authMiddleware, warrantyRouter)
+routes.use('/reports', authMiddleware, reportsRouter)
 routes.post('/nearest-technician', authMiddleware, getNearestTechnician)
 routes.use('/ongkir', authMiddleware, ongkirRouter)
 

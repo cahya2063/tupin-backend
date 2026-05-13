@@ -274,6 +274,7 @@ const cancelJobs = async (req, res, next)=>{// teknisi
         message: 'Job tidak bisa dibatalkan pada status ini'
       })
     }
+    
     if (job.status === 'transport fee paid') {
       await createTransfer(job._id, job.selectedTechnician, 'transportation')
     }
