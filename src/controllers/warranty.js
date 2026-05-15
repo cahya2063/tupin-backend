@@ -27,10 +27,7 @@ const createWarranty = async(req, res, next)=>{
             })
             // job.status = 'completed'
             // await job.save()
-            emitToJobParties('job:completed', job, {
-                jobId: job._id,
-                status: job.status
-            })
+            
             // notifikasi ke pelanggan
             createNotification(job.idCreator, job._id, `berhasil mengajukan ke job ${job.title}`)
 
@@ -140,8 +137,13 @@ const doneWarranty = async(req, res, next)=>{
     warranty.isResolved = true
     warranty.save()
     job.status = 'completed'
+    job.jobDoneDate = Date.now()
     job.save()
     await createTransfer(job._id, job.selectedTechnician, 'transfer')
+    emitToJobParties('job:completed', job, {
+        jobId: job._id,
+        status: job.status
+    })
     emitToJobParties('warranty:done', job, {
       warrantyId: warranty._id,
       status: warranty.status
@@ -166,8 +168,14 @@ const rejectWarranty = async(req, res, next)=>{
     warranty.status = 'rejected'
     warranty.isResolved = true
     warranty.save()
+
     job.status = 'completed'
+    job.jobDoneDate = Date.now()
     job.save()
+    emitToJobParties('job:completed', job, {
+        jobId: job._id,
+        status: job.status
+    })
     await createTransfer(job._id, job.idCreator, 'transfer')
     emitToJobParties('warranty:reject', job, {
       warrantyId: warranty._id,

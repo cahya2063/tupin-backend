@@ -15,12 +15,21 @@ const reportsSchema = new mongoos.Schema({
             'Hasil tidak sesuai',
             'Penipuan',  // lost contact
             'Pencurian', // barang tidak dikembalikan
+            'Sulit dihubungi',
             'Lainnya'
         ],
         default: 'Penipuan'
     },
     description: {
         type: String,
+        required: false
+    },
+    adminNote: {
+        type: String,
+        required: false
+    },
+    point: {
+        type: Number,
         required: false
     },
     reportImage: {

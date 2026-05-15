@@ -36,9 +36,10 @@ const updateProfile = async (req, res, next)=>{// client, teknisi
             })
         }
 
+        
         const result = await userCollection.updateOne(
             { _id: new ObjectId(id) }, 
-            { $set: validasi.data }
+            { $set: validasi.data },
         )
 
         if (result.matchedCount === 0) {
