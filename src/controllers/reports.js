@@ -32,7 +32,148 @@ const addReports = async(req, res, next)=>{ // client
     }
 }
 
+const getAllReports = async(req, res, next)=>{ // admin
+    try {
+        const reports = await reportsCollection.find({})
+
+        const jobIds = reports.map(report => report.jobId)
+
+        const jobs = await jobsCollection.find({
+            _id: {$in: jobIds}
+        })
+
+        if(!reports || !jobs){
+            res.status(200).json({
+            success: true,
+            reports: [],
+            jobs: []
+        })    
+        }
+        res.status(200).json({
+            success: true,
+            reports: reports,
+            jobs: jobs
+        })
+    } catch (error) {
+        next(error)
+    }
+}
+
+const getReportsByJobId = async(req, res, next)=>{ // client || technician
+    try {
+        const {jobId} = req.params
+
+        const job = await jobsCollection.findOne({
+            _id: jobId
+        })
+
+        if(!job){
+            res.status(404).json({
+                success: false,
+                message: 'data job tidak ditemukan'
+            })
+        }
+
+        const reports = await reportsCollection.findOne({
+            jobId: job._id
+        })
+
+        res.status(200).json({
+            success: true,
+            reports: reports
+        })
+    } catch (error) {
+        next(error)
+    }
+}
+
+const getReportsByUserId = async(req, res, next)=>{ // client
+    try {
+        const {userId} = req.params
+        const jobs = await jobsCollection.find({
+            $or: [
+                {selectedTechnician: userId},
+                {idCreator: userId}
+            ],
+        })
+
+        const jobIds = jobs.map(job => job._id)
+
+        const reports = await reportsCollection.find({
+            jobId: {$in: jobIds}
+        })
+        if (reports.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'data report tidak ditemukan',
+                reports: [],
+                jobs: []
+            })
+        }
+
+        res.status(200).json({
+            success: true,
+            reports: reports,
+            jobs: jobs
+        })
+    } catch (error) {
+        next(error)
+    }
+}
+
+const approveReport = async(req, res, next)=>{ // admin
+    try {
+        const {reportId} = req.params
+        const {adminNote, point} = req.body
+
+        
+        const report = await reportsCollection.findOne({
+            _id: reportId
+        })
+
+        report.adminNote = adminNote
+        report.point = point
+        report.status = 'resolved'
+        await report.save()
+
+        res.status(200).json({
+            success: true,
+            message: 'Berhasil menyetujui report pelanggan'
+        })
+        
+    } catch (error) {
+        next(error)
+    }
+}
+
+const rejectReport = async(req, res, next)=>{
+    try {
+        const {reportId} = req.params
+        const {adminNote, point} = req.body
+
+        const report = await reportsCollection.findOne({
+            _id: reportId
+        })
+
+        report.adminNote = adminNote
+        report.point = point
+        report.status = 'rejected'
+        await report.save()
+
+        res.status(200).json({
+            success: true,
+            message: 'Berhasil menolak report pelanggan'
+        })
+    } catch (error) {
+        next(error)
+    }
+}
 
 export {
-    addReports
+    addReports,
+    getAllReports,
+    getReportsByJobId,
+    getReportsByUserId,
+    approveReport,
+    rejectReport
 }

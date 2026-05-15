@@ -185,7 +185,7 @@ const getInvoices = async (req, res, next) => {// client
     const { userId } = req.params    
 
     const invoiceData = await paymentCollection.find({$or: [{payerId: userId}, {receiverId: userId}]})
-    
+        
     const payments = invoiceData.map(async (data)=>{      
       const invoice = await getInvoiceRequest(data.invoiceId, data.subAccountId)
 
@@ -587,6 +587,7 @@ const handleXenditWebhookRefund = async(req, res, next)=>{
     return res.status(500).send("ERR");
   }
 }
+
 
 const handleXenditWebhooksPayout = async (req, res)=>{
   try {

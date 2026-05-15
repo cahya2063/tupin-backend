@@ -267,7 +267,8 @@ const cancelJobs = async (req, res, next)=>{// teknisi
         message: 'data job tidak ditemukan'
       })
     }
-     // status yang boleh cancel
+
+    // status yang boleh cancel
     const allowedStatuses = ['open', 'transport fee paid']
     if (!allowedStatuses.includes(job.status)) {
       return res.status(400).json({

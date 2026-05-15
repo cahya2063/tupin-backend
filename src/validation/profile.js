@@ -34,7 +34,9 @@ const sanitizeUpdate = (data) => {
       ? validator.escape(String(data.zip_code))
       : '',
 
-    receiverLocation: data.receiverLocation ?? null
+    receiverLocation: data.receiverLocation ?? null,
+
+    location: data.location ?? null
   }
 }
 
