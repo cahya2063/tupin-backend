@@ -61,24 +61,24 @@ const addJob = async (req, res) => { // client
           },
         }
       );
-      res.status(201).json({
+      return res.status(201).json({
         message: "berhasil menambah job",
         data: newJob,
       });
     }
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 };
 const getAllJob = async (req, res)=>{// teknisi
   try {
     const data = await jobsCollection.find({})
-    res.status(200).json({
+    return res.status(200).json({
       'message': 'berhasil mengambil data',
       'jobs': data
     })
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       'message': 'gagal mengambil data'
     })
   }
@@ -187,7 +187,7 @@ const checkedJob = async(req, res, next)=>{
       status: job.status
     })
     
-    res.status(200).json({
+    return res.status(200).json({
       message: 'job sudah diperiksa oleh teknisi'
     })
   } catch (error) {
@@ -203,7 +203,7 @@ const doneJob = async(req, res, next)=>{// teknisi
   })
 
   if(!job){
-    res.status(404).json({
+    return res.status(404).json({
       message: 'job tidak ditemukan'
     })
   }
@@ -225,7 +225,7 @@ const doneJob = async(req, res, next)=>{// teknisi
   // buat notifikasi teknisi
   createNotification(technician.id, jobId, `tunggu client mengkonfirmasi jika ${job.title} sudah selesai`)
 
-  res.status(200).json({
+  return res.status(200).json({
     message: 'berhasil menyelesaikan job'
   })
 }

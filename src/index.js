@@ -79,7 +79,7 @@ io.on('connection', (socket)=>{
 // Middleware error handler global
 app.use((err, req, res, next) => {
     console.error('Terjadi error:', err.stack)
-    res.status(500).json({
+    return res.status(500).json({
         message: err.message || 'Terjadi kesalahan pada server'
     })
 })

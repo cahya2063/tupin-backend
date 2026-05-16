@@ -32,7 +32,7 @@ const postSignupClient = async (req, res) => {// client
 
   // untuk menyimpan ke database
   await userCollection.insertMany([newUser]);
-  res.status(201).json({
+  return res.status(201).json({
     message: 'registrasi berhasil',
   });
 };
@@ -71,7 +71,7 @@ const signupTechncianFirstStep = async (req, res, next)=>{ // technician
     }
     await userCollection.insertOne(newTechnician)
     await sendEmailRegistrationFirstStep('cronosstar007@gmail.com')
-    res.status(201).json({
+    return res.status(201).json({
       message: 'pendaftaran berhasil tunggu email dari kami ya!!'
     })
   } catch (error) {
@@ -129,7 +129,7 @@ const rejectTechnician = async(req, res, next)=>{
     })
 
     if(!technician){
-      res.status(404).json({
+      return res.status(404).json({
         success: false,
         message: 'teknisi belum terdaftar'
       })
@@ -139,7 +139,7 @@ const rejectTechnician = async(req, res, next)=>{
     technician.save()
     sendRejectTechnicianEmail('cronosstar007@gmail.com')
 
-    res.status(200).json({
+    return res.status(200).json({
       message: `berhasil menolak teknisi ${technician.nama}`
     })
   } catch (error) {

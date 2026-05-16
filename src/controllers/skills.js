@@ -4,7 +4,7 @@ const createSkills = async(req, res, next)=>{
     try {
         const {data} = req.body
         await SkillCollection.create(data)
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: 'berhasil menambah skill baru'
         })
@@ -28,7 +28,7 @@ const updateSkills = async(req, res,next)=>{
             })
         }
 
-        res.status(200).json({
+        return res.status(200).json({
             message: 'Skill berhasil diupdate',
             data: skill
         })
@@ -42,7 +42,7 @@ const deleteSkills = async(req, res, next)=>{
         const {skillId} = req.params
         const deletedSkill = await SkillCollection.findByIdAndDelete(skillId)
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: 'berhasil hapus skill'
         })
@@ -53,7 +53,7 @@ const deleteSkills = async(req, res, next)=>{
 const getAllSkills = async(req, res, next)=>{// client
     try {
         const data = await SkillCollection.find({})
-        res.status(200).json({
+        return res.status(200).json({
             'message': 'berhasil mengambil data',
             'skills': data
         })
@@ -65,7 +65,7 @@ const getSkillById = async(req, res, next)=>{
     const {id} = req.params
     try {
         const skill = await SkillCollection.findById(id)
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             skill
         })
