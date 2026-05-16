@@ -95,12 +95,12 @@ const getTechnicianPending = async(req, res, next)=>{
             status: 'pending'
         })
         if(!techniciansPending){
-            res.status(404).json({
+            return res.status(404).json({
                 success: false,
                 message: 'Teknisi tidak ditemukan'
             })
         }
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             technician: techniciansPending
         })
@@ -110,4 +110,29 @@ const getTechnicianPending = async(req, res, next)=>{
 
 }
 
-export { updateProfile, getProfile, updateAvatar, getTechnicianPending };
+const getTechnicianPoint = async(req, res, next)=>{
+    try {
+        // const = technician
+        const technician = await userCollection.find({
+            penaltyPoint: {$gte: 50},
+            isActive: true
+            
+        }).select('-password')
+
+        // console.log('technician Penalty : ', technician);
+        
+        if(!technician){
+            return res.status(404).json({
+                success: false,
+                message: 'teknisi tidak ditemukan'
+            })
+        }
+        return res.status(200).json({
+            success: true,
+            technician: technician
+        })
+    } catch (error) {
+        next(error)
+    }
+}
+export { updateProfile, getProfile, updateAvatar, getTechnicianPending, getTechnicianPoint };

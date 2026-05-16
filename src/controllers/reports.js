@@ -1,5 +1,6 @@
 import jobsCollection from "../models/jobs.js"
 import reportsCollection from "../models/reports.js"
+import userCollection from "../models/users.js"
 
 const addReports = async(req, res, next)=>{ // client
     try {
@@ -23,7 +24,7 @@ const addReports = async(req, res, next)=>{ // client
             createdAt: Date.now()
         })
 
-        res.status(201).json({
+        return res.status(201).json({
             success: true,
             message : 'berhasil mengajukan laporan'
         })
@@ -43,13 +44,13 @@ const getAllReports = async(req, res, next)=>{ // admin
         })
 
         if(!reports || !jobs){
-            res.status(200).json({
-            success: true,
-            reports: [],
-            jobs: []
-        })    
+            return res.status(200).json({
+                success: true,
+                reports: [],
+                jobs: []
+            })    
         }
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             reports: reports,
             jobs: jobs
@@ -68,7 +69,7 @@ const getReportsByJobId = async(req, res, next)=>{ // client || technician
         })
 
         if(!job){
-            res.status(404).json({
+            return res.status(404).json({
                 success: false,
                 message: 'data job tidak ditemukan'
             })
@@ -78,7 +79,7 @@ const getReportsByJobId = async(req, res, next)=>{ // client || technician
             jobId: job._id
         })
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             reports: reports
         })
@@ -111,7 +112,41 @@ const getReportsByUserId = async(req, res, next)=>{ // client
             })
         }
 
-        res.status(200).json({
+        return res.status(200).json({
+            success: true,
+            reports: reports,
+            jobs: jobs
+        })
+    } catch (error) {
+        next(error)
+    }
+}
+
+const getReportsByTechnicianId = async(req, res, next)=>{
+    try {
+        const {technicianId} = req.params
+        
+        const reports = await reportsCollection.find({
+            technicianId: technicianId
+        })
+
+        
+        const jobIds = reports.map(rep => rep.jobId)
+
+        const jobs = await jobsCollection.find({
+            _id: {$in: jobIds}
+        })
+
+        if(reports.length == 0){
+            return res.status(404).json({
+                success: false,
+                message: 'data report tidak ditemukan',
+                reports: [],
+                jobs: []
+            })
+        }        
+
+        return res.status(200).json({
             success: true,
             reports: reports,
             jobs: jobs
@@ -130,13 +165,19 @@ const approveReport = async(req, res, next)=>{ // admin
         const report = await reportsCollection.findOne({
             _id: reportId
         })
+        const technician = await userCollection.findOne({
+            _id: report.technicianId
+        })
 
         report.adminNote = adminNote
         report.point = point
         report.status = 'resolved'
         await report.save()
 
-        res.status(200).json({
+        technician.penaltyPoint += report.point
+        await technician.save()
+
+        return res.status(200).json({
             success: true,
             message: 'Berhasil menyetujui report pelanggan'
         })
@@ -160,7 +201,7 @@ const rejectReport = async(req, res, next)=>{
         report.status = 'rejected'
         await report.save()
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             message: 'Berhasil menolak report pelanggan'
         })
@@ -169,11 +210,42 @@ const rejectReport = async(req, res, next)=>{
     }
 }
 
+const disableTechnician = async(req, res, next)=>{
+    try {
+        const {technicianId} = req.params
+    
+        const technician = await userCollection.findOne({
+            _id: technicianId
+        })
+        
+        if(!technician){
+            return res.status(404).json({
+                success: false,
+                message: 'teknisi tidak ditemukan'
+            })
+        }
+
+        technician.isActive = false
+        await technician.save()
+        return res.status(201).json({
+            success: true,
+            message: 'berhasil nonaktifkan teknisi'
+        })
+
+        
+    } catch (error) {
+        next(error)
+    }
+
+}
+
 export {
     addReports,
     getAllReports,
     getReportsByJobId,
     getReportsByUserId,
+    getReportsByTechnicianId,
     approveReport,
-    rejectReport
+    rejectReport,
+    disableTechnician
 }

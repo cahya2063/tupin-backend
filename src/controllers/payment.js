@@ -175,7 +175,7 @@ const createInvoice = async (req, res, next) => { // technician
 
   } catch (err) {
     console.error(err.invoice?.data || err);
-    res.status(500).json(err.invoice?.data || err.message);
+    return res.status(500).json(err.invoice?.data || err.message);
     next(err)
   }
 };
@@ -227,6 +227,32 @@ const getInvoices = async (req, res, next) => {// client
   }
 }
 
+const getInvoicesByJobId = async (req, res, next) => {
+  try {
+    const { jobId } = req.params
+
+    let payment = await paymentCollection.findOne({
+      jobId,
+      type: 'repair'
+    })
+
+    // jika repair tidak ada
+    if (!payment) {
+      payment = await paymentCollection.findOne({
+        jobId,
+        type: 'transportation'
+      })
+    }
+
+    return res.status(200).json({
+      success: true,
+      payment: payment
+    })
+
+  } catch (error) {
+    next(error)
+  }
+}
 const createTransfer = async(jobId, receiverId, type)=>{
   try {
     const referenceId = `trf-${Date.now()}`
@@ -612,6 +638,7 @@ export {
     createDisbursements,
     getDisbursements,
     getInvoices,
+    getInvoicesByJobId,
     createTransfer,
     getTransfer,
     autoTransfer,

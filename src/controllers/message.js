@@ -6,11 +6,11 @@ const getMessageByChatId = async (req, res, next)=>{// client, teknisi
         const {chatId} = req.params
         const messages = await messageCollection.find({chatId : chatId})
         if(!messages){
-            res.status(404).json({
+            return res.status(404).json({
                 message: 'belum ada pesan'
             })
         }
-        res.status(200).json({
+        return res.status(200).json({
             message: 'berhasil mengambil pesan chat',
             chat_message: messages
         })
@@ -52,7 +52,7 @@ const createMessage = async (req, res, next)=>{// client, teknisi
         // kirim pesan real-time ke room chat
         io.to(chatId).emit('receive_message', newMessage)
         
-        res.status(201).json({
+        return res.status(201).json({
             message: 'pesan berhasil terkirim'
         })
     } catch (error) {

@@ -17,7 +17,7 @@ const createChat = async (req, res, next)=>{// teknisi, client
             technicianId: technicianId
         })
         await chat.save()
-        res.status(201).json({
+        return res.status(201).json({
             message: 'chat berhasil dibuat',
         })
     } catch (error) {
@@ -29,7 +29,7 @@ const getChatByUserId = async (req, res, next)=>{// teknisi, client
     try {
         const { userId } = req.params;
         const chats = await chatCollection.find({ $or: [{ clientId: userId }, { technicianId: userId }] });
-        res.status(200).json({
+        return res.status(200).json({
             message: 'chats berhasil di ambil',
             chats: chats
         });

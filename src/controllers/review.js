@@ -1,3 +1,4 @@
+import jobsCollection from "../models/jobs.js"
 import reviewCollection from "../models/review.js"
 import userCollection from "../models/users.js"
 import { createNotification } from "./notification.js"
@@ -17,7 +18,7 @@ const createReview = async(req, res, next)=>{// client, teknisi
         await newRating.save()
         createNotification(senderId, jobId, `berhasil memberi review ke ${receiverUser.nama}`)
         createNotification(receiverId, jobId, `${senderUser.nama} memberimu review`)
-        res.status(201).json({
+        return res.status(201).json({
             message: 'berhasil memberi review'
         })
     } catch (error) {
@@ -31,11 +32,11 @@ const getReviewByUserId = async(req, res, next)=>{//client teknisi
             receiverId: userId
         })
         if(!review){
-            res.status(404).json({
+            return res.status(404).json({
                 message: 'user belum melakukan review'
             })
         }
-        res.status(200).json({
+        return res.status(200).json({
             message: `berhasil mengambil data review`,
             review: review
         })
@@ -52,12 +53,12 @@ const getReviewByJobId = async(req, res, next)=>{// client, teknisi
             // senderId: userId
         })
         if(!review){
-            res.status(404).json({
+            return res.status(404).json({
                 message: 'user belum melakukan review',
                 review: review
             })
         }
-        res.status(200).json({
+        return res.status(200).json({
             message: `berhasil mengambil data review`,
             review: review
         })
@@ -66,4 +67,51 @@ const getReviewByJobId = async(req, res, next)=>{// client, teknisi
     }
 }
 
-export {createReview, getReviewByUserId, getReviewByJobId}
+const getTechnicianStatistics = async (req, res, next) => {
+  try {
+    const { receiverId } = req.params
+
+    // ambil data rating
+    const ratingResult = await reviewCollection.aggregate([
+      {
+        $match: {
+          receiverId: receiverId
+        }
+      },
+      {
+        $group: {
+          _id: '$receiverId',
+          avgRating: { $avg: '$rating' },
+          totalReview: { $sum: 1 }
+        }
+      }
+    ])
+
+    // hitung jumlah job completed
+    const completedJobs = await jobsCollection.countDocuments({
+      selectedTechnician: receiverId,
+      status: 'completed'
+    })
+
+    return res.status(200).json({
+      success: true,
+      receiverId,
+
+      avgRating:
+        ratingResult.length > 0
+          ? Number(ratingResult[0].avgRating.toFixed(1))
+          : 0,
+
+      totalReview:
+        ratingResult.length > 0
+          ? ratingResult[0].totalReview
+          : 0,
+
+      completedJobs
+    })
+
+  } catch (error) {
+    next(error)
+  }
+}
+export {createReview, getReviewByUserId, getReviewByJobId, getTechnicianStatistics}

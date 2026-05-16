@@ -32,7 +32,7 @@ const createWarranty = async(req, res, next)=>{
             createNotification(job.idCreator, job._id, `berhasil mengajukan ke job ${job.title}`)
 
             if(addWarranty){
-                res.status(201).json({
+                return res.status(201).json({
                     message: "berhasil mengajukan garansi",
                 });
             }
@@ -50,13 +50,13 @@ const getWarrantiesByJobId = async(req, res, next)=>{
             jobId: jobId
         })
         if(!warranty){
-            res.status(404).json({
+            return res.status(404).json({
                 success: false,
                 message: 'data garansi tidak ditemukan'
             })
         }
 
-        res.status(200).json({
+        return res.status(200).json({
             success: true,
             warranty: warranty
         })
@@ -83,7 +83,7 @@ const getWarranties = async(req, res, next)=>{
                 jobId: {$in: jobIds}
             })
 
-            res.status(200).json({
+            return res.status(200).json({
                 success: true,
                 warranties: warranties,
                 jobs: jobs
@@ -102,7 +102,7 @@ const approveWarranties = async(req, res, next)=>{
         _id: warranty.jobId
     })
     if(!warranty){
-        res.status(404).json({
+        return res.status(404).json({
             success: false,
             message: 'data garansi tidak ditemukan'
         })
@@ -113,7 +113,7 @@ const approveWarranties = async(req, res, next)=>{
       warrantyId: warranty._id,
       status: warranty.status
     })
-    res.status(200).json({
+    return res.status(200).json({
         success: true,
         message: "berhasil menerima garansi"
     })
@@ -128,7 +128,7 @@ const doneWarranty = async(req, res, next)=>{
         _id: warranty.jobId
     })
     if(!warranty){
-        res.status(404).json({
+        return res.status(404).json({
             success: false,
             message: 'data garansi tidak ditemukan'
         })
@@ -160,7 +160,7 @@ const rejectWarranty = async(req, res, next)=>{
         _id: warranty.jobId
     })
     if(!warranty){
-        res.status(404).json({
+        return res.status(404).json({
             success: false,
             message: 'data garansi tidak ditemukan'
         })

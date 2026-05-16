@@ -84,18 +84,6 @@ const logInSchema = new mongoos.Schema({
       index: '2dsphere'
     }
   },
-  split_rule_id: {
-    type: String,
-    required: false
-  },
-  bank_name: {
-    type: String,
-    required: false
-  },
-  account_number: {
-    type: String,
-    required: false
-  },
   activationToken: {
     type: String,
     required: false
@@ -103,7 +91,16 @@ const logInSchema = new mongoos.Schema({
   activationExpired: {
     type: Date,
     required: false
+  },
+  penaltyPoint: {
+    type: Number,
+    default: 0
+  },
+  isActive: {
+    type: Boolean,
+    default: true
   }
+
 });
 
 const userCollection = mongoos.model('users', logInSchema);

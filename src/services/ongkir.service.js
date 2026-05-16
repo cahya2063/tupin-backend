@@ -99,7 +99,10 @@ const getNearestTechnician = async(req, res)=>{
                 distanceField: 'distance',
                 spherical: true,
                 distanceMultiplier: 0.001, // rubah dari Km ke Meter
-                query: { role: 'technician' },
+                query: { 
+                    role: 'technician',
+                    isActive: true
+                },
                 // maxDistance: 7000
             }
         },
