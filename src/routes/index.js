@@ -1,5 +1,5 @@
 import express from 'express';
-import { activateTechnician, postSignupClient, signupTechncianFirstStep } from '../controllers/register.js';
+import { activateClient, activateTechnician, postSignupClient, signupTechncianFirstStep } from '../controllers/register.js';
 import mongoos from '../utils/db.js';
 import {authMiddleware} from '../middleware/auth.js';
 import { postLogin } from '../controllers/login.js';
@@ -11,7 +11,7 @@ import chatRouter from './chat.js';
 import messageRouter from './message.js';
 import reviewRouter from './review.js';
 import paymentRouter from './payment.js';
-import { handleXenditWebhookRefund, handleXenditWebhooksInvoices, handleXenditWebhooksPayout } from '../controllers/payment.js';
+import { handleXenditWebhooksInvoices, handleXenditWebhooksPayout } from '../controllers/payment.js';
 import ongkirRouter from './ongkir.js';
 import { getNearestTechnician } from '../services/ongkir.service.js';
 import warrantyRouter from './warranty.js';
@@ -22,6 +22,7 @@ const routes = express.Router();
 routes.post('/signup', postSignupClient);
 routes.post('/signup-tech', signupTechncianFirstStep);
 routes.post('/technician/activate', activateTechnician);
+routes.post('/client/activate', activateClient)
 routes.post('/signin', postLogin)
 routes.use('/profile', authMiddleware, profileRouter)
 routes.use('/jobs', authMiddleware, jobsRouter)
@@ -40,7 +41,6 @@ routes.use('/ongkir', authMiddleware, ongkirRouter)
 
 routes.post('/xendit-webhooks', handleXenditWebhooksInvoices)
 routes.post('/xendit-webhooks-payout', handleXenditWebhooksPayout)
-routes.post('/xendit-webhooks-refund', handleXenditWebhookRefund)
 routes.get('/', (req, res) => {
   res.json({
     message: 'Hello World'

@@ -2,20 +2,21 @@ import userCollection from '../models/users.js';
 import { createSubAccountRequest } from '../services/xendit.service.js';
 import { encrypt } from '../utils/bcrypt.js';
 import registerValidation from '../validation/register.js';
-import { sendActivationEmail, sendEmailRegistrationFirstStep, sendRejectTechnicianEmail } from './notification.js';
+import { sendActivationClientEmail, sendActivationEmail, sendEmailRegistrationFirstStep, sendRejectTechnicianEmail } from './notification.js';
 import crypto from 'crypto'
 // import { createSplitRule } from './payment.js';
 
 const postSignupClient = async (req, res) => {// client
-  const validasi = registerValidation(req.body);
-  if (validasi?.status === false) {
-    return res.status(400).json({
-      message: validasi.message,
-    });
-  }
+  // const validasi = registerValidation(req.body);
+  const {nama, email} = req.body
+  // if (validasi?.status === false) {
+  //   return res.status(400).json({
+  //     message: validasi.message,
+  //   });
+  // }
 
   const isRegistered = await userCollection.findOne({
-    email: validasi.data.email,
+    email: email,
   });
 
   if (isRegistered) {
@@ -24,16 +25,38 @@ const postSignupClient = async (req, res) => {// client
     });
   }
 
+  const activationToken = crypto.randomBytes(32).toString('hex')
+
   const newUser = {
-    nama: validasi.data.nama,
-    email: validasi.data.email,
-    password: await encrypt(String(validasi.data.password)),
+    nama: nama,
+    email: email,
+    status: 'approve',
+    role: 'client',
+    // password: await encrypt(String(validasi.data.password)),
+    activationToken: activationToken,
+    activationExpired: Date.now() + 1000 * 60 * 60 * 24 * 3 // 3 hari
+
   };
+  const subAccount = {
+    email : newUser.email,
+    type: 'OWNED',
+    business_name: newUser.nama
+  }
+
+  const subAccountResponse = await createSubAccountRequest(subAccount)
+  newUser.subAccountId = subAccountResponse.id
 
   // untuk menyimpan ke database
-  await userCollection.insertMany([newUser]);
+  const client = await userCollection.insertMany([newUser]);
+
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
+  const activationLink =`${frontendUrl}/account/activate?token=${activationToken}&role=${newUser.role}`;
+  await sendActivationClientEmail('cronosstar007@gmail.com', activationLink);
+
+  
   return res.status(201).json({
-    message: 'registrasi berhasil',
+    success: true,
+    message: 'registrasi berhasil cek emailmu!!',
   });
 };
 
@@ -99,16 +122,18 @@ const approveTechnician = async(req, res, next)=>{// admin
       type: 'OWNED',
       business_name: technician.nama
     }
-    await createSubAccountRequest(subAccount)
+    
+    const subAccountResponse = await createSubAccountRequest(subAccount)
     
   
     technician.status = 'approve'
     technician.activationToken = activationToken
     technician.activationExpired = Date.now() + 1000 * 60 * 60 * 24 * 3 // 3 hari
+    technician.subAccountId = subAccountResponse.id
     await technician.save()
 
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
-    const activationLink =`${frontendUrl}/technician/activate?token=${activationToken}`;
+    const activationLink =`${frontendUrl}/account/activate?token=${activationToken}&role=${technician.role}`;
     await sendActivationEmail('cronosstar007@gmail.com', activationLink);
 
     return res.status(200).json({
@@ -190,11 +215,56 @@ const activateTechnician = async (req, res, next) => {// technician
     next(error)
   }
 }
+const activateClient = async (req, res, next) => {// client
+  try {
+    const { token, password } = req.body
+    const newPassword = String(password || '')
+    console.log('token : ', token);
+    
+
+    if (!token) {
+      return res.status(400).json({
+        message: 'Token aktivasi wajib dikirim'
+      })
+    }
+
+
+    const client = await userCollection.findOne({
+      activationToken: token,
+      role: 'client'
+    })
+
+    if (!client) {
+      return res.status(400).json({
+        message: 'Token aktivasi tidak valid'
+      })
+    }
+
+    if (client.activationExpired && new Date(client.activationExpired).getTime() < Date.now()) {
+      return res.status(400).json({
+        message: 'Token aktivasi sudah kedaluwarsa'
+      })
+    }
+
+    client.password = await encrypt(newPassword)
+    client.activationToken = undefined
+    client.activationExpired = undefined
+
+    await client.save()
+
+    return res.status(200).json({
+      message: 'Password berhasil dibuat'
+    })
+  } catch (error) {
+    next(error)
+  }
+}
 
 export { 
   postSignupClient, 
   signupTechncianFirstStep, 
   approveTechnician, 
   activateTechnician, 
+  activateClient,
   rejectTechnician 
 };

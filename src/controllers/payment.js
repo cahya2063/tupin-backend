@@ -462,7 +462,7 @@ const getDisbursements = async(req, res, next)=>{
   try {
     const {technicianId} = req.params
     const payouts = await payoutCollection.find({technicianId: technicianId})
-    if(!payouts){
+    if(payouts.length == 0){
       return res.status(404).json({
         success: false,
         message: 'payout untuk teknisi ini tidak ditemukan'
@@ -473,10 +473,14 @@ const getDisbursements = async(req, res, next)=>{
     const payoutDetails = payouts.map(async (payout) => {
       const technician = await userCollection.findById(payout.technicianId)
 
-      return await getDisbursementsRequest(
+      const latestDisbursements = await getDisbursementsRequest(
         payout.payoutId,
         technician.subAccountId
       )
+      payout.status = latestDisbursements.status
+      await payout.save()
+
+      return latestDisbursements
     })
 
     const resolvedPayoutDetails = await Promise.all(payoutDetails);
@@ -603,16 +607,7 @@ const handleXenditWebhooksInvoices = async (req, res) => {// xendit execution
 
 };
 
-const handleXenditWebhookRefund = async(req, res, next)=>{
-  try {
-    const event = req.body
-    console.log('refund : ', event);
-    
-    return res.status(200).send("OK");
-  } catch (error) {
-    return res.status(500).send("ERR");
-  }
-}
+
 
 
 const handleXenditWebhooksPayout = async (req, res)=>{
@@ -642,7 +637,6 @@ export {
     createTransfer,
     getTransfer,
     autoTransfer,
-    handleXenditWebhookRefund,
     handleXenditWebhooksPayout
 
 }

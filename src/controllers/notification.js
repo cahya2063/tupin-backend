@@ -57,7 +57,7 @@ const deleteNotification = async(req, res, next)=>{// client, teknisi
     }
 }
 
-async function sendEmailRegistrationFirstStep(destinationEmail){
+async function sendEmailRegistrationFirstStep(destinationEmail){// technician
     try {
         const transport = nodemailer.createTransport({
             service: 'gmail',
@@ -108,7 +108,7 @@ async function sendEmailRegistrationFirstStep(destinationEmail){
         console.error(error);
     }
 }
-async function sendActivationEmail(destinationEmail, activationLink) {
+async function sendActivationEmail(destinationEmail, activationLink) {// technician
     try {
         const transport = nodemailer.createTransport({
             service: 'gmail',
@@ -191,7 +191,7 @@ async function sendActivationEmail(destinationEmail, activationLink) {
     }
 }
 
-async function sendRejectTechnicianEmail(destinationEmail) {
+async function sendRejectTechnicianEmail(destinationEmail) {// technician
     try {
         const transport = nodemailer.createTransport({
             service: 'gmail',
@@ -249,6 +249,85 @@ async function sendRejectTechnicianEmail(destinationEmail) {
     }
 }
 
+async function sendActivationClientEmail(destinationEmail, activationLink) {// technician
+    try {
+        const transport = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: 'fixifymultiservis@gmail.com',
+                pass: 'nrhougusoqlzgxhp'
+            }
+        });
+
+        await transport.sendMail({
+            from: '"Fixify Multi Servis" <fixifymultiservis@gmail.com>',
+            to: destinationEmail,
+            subject: 'Aktivasi Akun Pelanggan 🔧',
+            html: `
+                <div style="font-family: Arial, sans-serif; background:#f4f4f4; padding:20px;">
+                    <div style="max-width:600px; margin:auto; background:white; padding:30px; border-radius:12px;">
+                        
+
+                        <p style="font-size:16px; color:#333;">
+                            Halo 👋,
+                        </p>
+
+                        <p style="font-size:15px; color:#555; line-height:1.6;">
+                            Selamat! Pendaftaran akun kamu di Berhasil
+                        </p>
+
+                        <p style="font-size:15px; color:#555; line-height:1.6;">
+                            Silakan lakukan aktivasi akun untuk membuat password
+                            dan melengkapi data profil kamu.
+                        </p>
+
+                        <div style="text-align:center; margin:35px 0;">
+                            <a 
+                                href="${activationLink}"
+                                style="
+                                    background:#16a34a;
+                                    color:white;
+                                    padding:14px 24px;
+                                    text-decoration:none;
+                                    border-radius:8px;
+                                    font-size:15px;
+                                    font-weight:bold;
+                                    display:inline-block;
+                                "
+                            >
+                                Aktivasi Akun
+                            </a>
+                        </div>
+
+                        <p style="font-size:14px; color:#666;">
+                            Atau buka link berikut:
+                        </p>
+
+                        <p style="word-break:break-all; font-size:13px; color:#2563eb;">
+                            ${activationLink}
+                        </p>
+
+                        <p style="font-size:14px; color:#ef4444;">
+                            ⚠️ Link aktivasi hanya berlaku selama 1 jam.
+                        </p>
+
+                        <hr style="margin:30px 0;" />
+
+                        <p style="font-size:12px; color:#999; text-align:center;">
+                            Email ini dikirim otomatis, mohon tidak membalas email ini.
+                        </p>
+                    </div>
+                </div>
+            `
+        });
+
+        console.log('email aktivasi berhasil dikirim');
+
+    } catch (error) {
+        console.error(error);
+    }
+}
+
 export {
     getNotificationsByUser, 
     createNotification, 
@@ -256,5 +335,6 @@ export {
     deleteNotification, 
     sendEmailRegistrationFirstStep,
     sendActivationEmail,
+    sendActivationClientEmail,
     sendRejectTechnicianEmail
 }
