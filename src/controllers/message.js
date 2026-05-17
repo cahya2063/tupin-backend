@@ -25,18 +25,30 @@ const createMessage = async (req, res, next)=>{// client, teknisi
 
         // console.log('type : ',messageType);
         let newMessage;
+        let uploadedImages = [];
+        if (req.files && req.files.length > 0) {
+            uploadedImages = req.files.map(file => file.filename);
+        }
         
         if(messageType == 'location'){
             newMessage = new messageCollection({
                 chatId,
                 senderId,
                 messageType,
-                message,
+                message: message || 'Location',
                 latitude: req.body.latitude,
                 longitude: req.body.longitude
             })
         }
-        
+        else if(messageType == 'image' || uploadedImages.length > 0){
+            newMessage = new messageCollection({
+                chatId,
+                senderId,
+                messageType: 'image',
+                message: message || '',
+                images: uploadedImages
+            })
+        }
         else if(messageType == 'message'){
 
             newMessage = new messageCollection({
