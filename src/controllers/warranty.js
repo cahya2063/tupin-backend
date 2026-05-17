@@ -15,16 +15,30 @@ const createWarranty = async(req, res, next)=>{
         }else{
 
             const data = req.body;
+
+            // cek apakah sebelumnya sudah pernah mengajukan garansi
+            const existingWarranty = await warrantyCollection.findOne({
+                jobId: data.jobId
+            });
+
+            if (existingWarranty) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Garansi untuk pekerjaan ini sudah pernah diajukan",
+                });
+            }
             const newWarranty = {
                 jobId: data.jobId,
                 reason: data.reason,
                 evidence: req.files ? req.files.map(file => file.filename) : [], // ambil nama file
             };
 
-            const addWarranty = await warrantyCollection.create(newWarranty)
             const job = await jobsCollection.findOne({
                 _id: newWarranty.jobId
             })
+
+
+            const addWarranty = await warrantyCollection.create(newWarranty)
             // job.status = 'completed'
             // await job.save()
             

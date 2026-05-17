@@ -8,6 +8,17 @@ const addReports = async(req, res, next)=>{ // client
         const {category, description} = req.body
         const jobs = await jobsCollection.findById(jobId)
 
+        const isReportExist = await reportsCollection.findOne({
+            jobId: jobId
+        })
+
+        if(isReportExist){
+            return res.status(400).json({
+                success: false,
+                message: 'sudah pernah report job ini'
+            })
+        }
+
         if(!jobs){
             return res.status(404).json({
                 success: false,

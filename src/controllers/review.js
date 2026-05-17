@@ -6,6 +6,16 @@ import { createNotification } from "./notification.js"
 const createReview = async(req, res, next)=>{// client, teknisi
     try {
         const {senderId, receiverId, jobId, rating, comment} = req.body
+
+        const isExistReview = await reviewCollection.findOne({
+            jobId: jobId
+        })
+        if(isExistReview){
+            return res.status(400).json({
+                success: false,
+                message: 'job ini sudah diberi ulasan'
+            })
+        }
         const newRating = new reviewCollection({
             senderId: senderId,
             receiverId: receiverId,
