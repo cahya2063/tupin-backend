@@ -11,12 +11,16 @@ const messageSchema = new mongoos.Schema({
     },
     messageType: {
         type: String,
-        enum: ['message', 'location'],
+        enum: ['message', 'location', 'image'],
         default: 'message'
     },
     message: {
         type: String,
-        required: true
+        required: false
+    },
+    images: {
+        type: [String],
+        default: []
     },
     latitude: {
         type: Number,

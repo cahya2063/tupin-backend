@@ -11,6 +11,8 @@ const storage = multer.diskStorage({
       cb(null, "uploads/evidence");
     }else if(file.fieldname === 'reports'){
       cb(null, "uploads/reports");
+    }else if(file.fieldname === 'images' || file.fieldname === 'chat'){
+      cb(null, "uploads/chat");
     }
     else {
       cb(null, "uploads/others");
