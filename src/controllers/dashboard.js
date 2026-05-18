@@ -15,7 +15,10 @@ const getCustomerDashboard = async (req, res, next) => {
     const userId = req.user.id;
 
     // 1. Ringkasan Pesanan (Jobs)
-    const allJobs = await jobsCollection.find({ idCreator: userId });
+    const allJobs = await jobsCollection.find({ 
+      idCreator: userId,
+      "moderation.isDeleted": false
+    });
     
     let activeJobsCount = 0;
     let completedJobsCount = 0;
@@ -46,7 +49,10 @@ const getCustomerDashboard = async (req, res, next) => {
     });
 
     // 4. Aktivitas Terkini (Recent Jobs)
-    const recentJobs = await jobsCollection.find({ idCreator: userId })
+    const recentJobs = await jobsCollection.find({ 
+      idCreator: userId, 
+      "moderation.isDeleted": false
+    })
       .sort({ _id: -1 })
       .limit(5);
 
@@ -98,7 +104,10 @@ const getTechnicianDashboard = async (req, res, next) => {
     const totalReview = ratingResult.length > 0 ? ratingResult[0].totalReview : 0;
 
     // 4. Manajemen Pekerjaan (Jobs)
-    const allJobs = await jobsCollection.find({ selectedTechnician: technicianId });
+    const allJobs = await jobsCollection.find({ 
+      selectedTechnician: technicianId, 
+      "moderation.isDeleted": false
+    });
     
     let incomingJobsCount = 0; 
     let pendingPaymentJobsCount = 0; 

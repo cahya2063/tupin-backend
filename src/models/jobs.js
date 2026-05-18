@@ -84,6 +84,36 @@ const jobsSchema = new mongoos.Schema({
             type: Date,
             required: false
         }
+    },
+    moderation: {
+        isDeleted: {
+            type: Boolean,
+            default: false
+        },
+        deletedBy: {
+            type: String,
+            required: false
+        },
+        deletedReason: {
+            type: String,
+            enum: [
+                'postingan spam',
+                'konten tidak pantas',
+                'upload foto aneh',
+                'bukan konteks perbaikan',
+            ],
+            required: false
+        },
+
+        deletedNote: {
+            type: String,
+            required: false
+        },
+
+        deletedAt: {
+            type: Date,
+            required: false
+        }
     }
 })
 
