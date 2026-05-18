@@ -125,16 +125,16 @@ const getAcceptedJob = async(req, res, next)=>{// teknisi
     const technicianId = req.user.id
     const jobs = await jobsCollection.find({selectedTechnician: technicianId})
     
-    jobs.forEach((job)=>{
-      const payment = paymentCollection.findOne({
-        jobId: job._id
-      })
-      // perbarui status job
-      if(payment.status == 'PAID' && payment.type === 'transportation' && job.status == 'pending transport fee'){
-        job.status = 'transport fee paid'
-        job.save()
-      }
-    })
+    // jobs.forEach((job)=>{
+    //   const payment = paymentCollection.findOne({
+    //     jobId: job._id
+    //   })
+    //   // perbarui status job
+    //   if(payment.status == 'PAID' && payment.type === 'transportation' && job.status == 'pending transport fee'){
+    //     job.status = 'transport fee paid'
+    //     job.save()
+    //   }
+    // })
     // console.log('jobs : ', jobs);
     
 
@@ -310,6 +310,103 @@ const cancelJobs = async (req, res, next)=>{// teknisi
   }
 }
 
+const reportJob = async (req, res, next)=>{// teknisi
+  try {
+    const {jobId} = req.params
+    const {deletedReason} = req.body
+
+    const reportJob = await jobsCollection.findOne({
+      _id: jobId,
+      status: 'open'
+    })
+
+
+    reportJob.moderation= {
+      isDeleted: false,
+      deletedBy: reportJob.selectedTechnician,
+      deletedAt: Date.now(),
+      deletedReason: deletedReason
+    }
+
+    await reportJob.save()
+
+    return res.status(201).json({
+      success: true,
+      message: 'berhasil laporkan job'
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
+const getReportedJob = async (req, res, next)=>{
+  try {
+    // const {jobId} = req.params
+
+    const reportedJobs = await jobsCollection.find({
+        "moderation.deletedBy": { $exists: true, $ne: null },
+        "moderation.isDeleted": false
+    }).sort({
+        "moderation.deletedAt": -1
+    });
+
+    if (reportedJobs.length === 0) {
+        return res.status(404).json({
+            success: false,
+            message: "Tidak ada postingan yang dilaporkan"
+        });
+    }
+
+    res.status(200).json({
+        success: true,
+        jobs: reportedJobs
+    });
+
+    
+  } catch (error) {
+    next(error)
+  }
+}
+
+const deleteReportedJob = async (req, res, next) => {
+  try {
+    const { jobId } = req.params
+    const { deletedNote } = req.body
+
+    console.log(jobId)
+    const deletedJobs = await jobsCollection.findOneAndUpdate(
+      {
+        _id: jobId,
+        "moderation.deletedBy": { $exists: true, $ne: null },
+        "moderation.isDeleted": false
+      },
+      {
+        $set: {
+          "moderation.isDeleted": true,
+          "moderation.deletedNote": deletedNote
+        }
+      },
+      {
+        new: true
+      }
+    )
+
+    if (!deletedJobs) {
+      return res.status(404).json({
+        success: false,
+        message: 'job tidak ditemukan'
+      })
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'berhasil menghapus job'
+    })
+
+  } catch (error) {
+    next(error)
+  }
+}
 export {
   addJob, 
   getAllJob, 
@@ -319,5 +416,8 @@ export {
   getJobByUser, 
   getAcceptedJob, 
   doneJob,
-  cancelJobs
+  cancelJobs,
+  reportJob,
+  getReportedJob,
+  deleteReportedJob
 }

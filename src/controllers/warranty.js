@@ -60,15 +60,17 @@ const createWarranty = async(req, res, next)=>{
 const getWarrantiesByJobId = async(req, res, next)=>{
     try {
         const {jobId} = req.params
+        
         const warranty = await warrantyCollection.findOne({
             jobId: jobId
         })
         if(!warranty){
             return res.status(404).json({
                 success: false,
-                message: 'data garansi tidak ditemukan'
+                warranty: null
             })
         }
+        
 
         return res.status(200).json({
             success: true,

@@ -103,6 +103,23 @@ const getTechnicianStatistics = async (req, res, next) => {
       status: 'completed'
     })
 
+    //update rating
+    const technician = await userCollection.findOneAndUpdate(
+        {
+            _id: receiverId
+        },
+        {
+            $set: {
+            ratings: ratingResult.length > 0
+                ? Number(ratingResult[0].avgRating.toFixed(1))
+                : 0
+            }
+        },
+        {
+            new: true
+        }
+    )
+
     return res.status(200).json({
       success: true,
       receiverId,
