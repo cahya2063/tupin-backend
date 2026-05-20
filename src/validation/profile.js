@@ -59,12 +59,12 @@ const updateProfileValidation = (dt) => {
     }
   }
 
-  if (typeof data.receiverLocation !== 'object' || data.receiverLocation === null) {
-    return {
-      status: false,
-      message: 'receiverLocation harus berupa objek'
-    }
-  }
+  // if (typeof data.receiverLocation !== 'object' || data.receiverLocation === null) {
+  //   return {
+  //     status: false,
+  //     message: 'receiverLocation harus berupa objek'
+  //   }
+  // }
   
 
   // 🏘 village (opsional, huruf saja kalau diisi)
