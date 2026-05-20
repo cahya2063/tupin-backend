@@ -47,6 +47,8 @@ const createInvoicesRequest = async(body)=>{ // client
 
 const getInvoiceRequest = async (invoiceId) => {
   const response = await client.get(`/v2/invoices/${invoiceId}`)
+  // console.log('response invoices : ', response.data);
+  
   return response.data
 }
 

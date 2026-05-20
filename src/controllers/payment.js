@@ -215,6 +215,8 @@ const getInvoices = async (req, res, next) => {// client
     })
     const results = await Promise.all(payments)
     
+    console.log('results invoices : ', results);
+    
     return res.status(200).json({
       success: true,
       invoices: results
@@ -257,6 +259,9 @@ const createTransfer = async(jobId, receiverId, type)=>{
   try {
     const referenceId = `trf-${Date.now()}`
     const sourceUserId = process.env.PLATFORM_ACCOUNT_ID
+    const adminFee = 3000
+    console.log('source id : ', sourceUserId);
+    
 
     const user = await userCollection.findById(receiverId)
     const payment = await paymentCollection.findOne({
@@ -267,7 +272,7 @@ const createTransfer = async(jobId, receiverId, type)=>{
 
     const payload = {
       reference: referenceId,
-      amount: payment.amount,
+      amount: payment.type == 'repair' ? payment.amount - adminFee : payment.amount,
       source_user_id: sourceUserId,
       destination_user_id: user.subAccountId
     }
@@ -468,7 +473,7 @@ const getDisbursements = async(req, res, next)=>{
         message: 'payout untuk teknisi ini tidak ditemukan'
       })
     }
-    console.log('payouts : ', payouts);
+    // console.log('payouts : ', payouts);
     
     const payoutDetails = payouts.map(async (payout) => {
       const technician = await userCollection.findById(payout.technicianId)
@@ -485,7 +490,7 @@ const getDisbursements = async(req, res, next)=>{
 
     const resolvedPayoutDetails = await Promise.all(payoutDetails);
 
-    console.log('payouts detail : ', resolvedPayoutDetails);
+    // console.log('payouts detail : ', resolvedPayoutDetails);
     
     return res.status(200).json({
       success: true,

@@ -23,6 +23,8 @@ const getDestinationRequest = async(req, res, next)=>{
     try {
         const { postCode } = req.params
         const response = await destination.get(`https://rajaongkir.komerce.id/api/v1/destination/domestic-destination?search=${postCode}`)
+        // console.log('destination : ', response.data);
+        
         
         return res.json({
             success: true,
@@ -39,13 +41,13 @@ const calculateShippingCost = async(req, res, next)=>{
 
         const jobs = await jobsCollection.findById(jobId)
         const technician = await userCollection.findById(jobs.selectedTechnician)
-        console.log('technician : ', technician);
         
-
+        
         const query = `https://api-sandbox.collaborator.komerce.id/tariff/api/v1/calculate?shipper_destination_id=${jobs.destination.destinationId}&receiver_destination_id=${technician.receiverLocation.destinationId}&weight=10&item_value=100000&cod=no&origin_pin_point=${jobs.location.lat}%2C${jobs.location.lng}&destination_pin_point=${technician.location.coordinates[1]}%2C${technician.location.coordinates[0]}`
         
         const response = await shippingCost.get(query)
-
+        
+        console.log('shipping cost : ', response.data.data);
         return res.json({
             success: true,
             shippingCost: response.data
