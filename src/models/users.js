@@ -84,6 +84,14 @@ const logInSchema = new mongoos.Schema({
       index: '2dsphere'
     }
   },
+  identityCard:{
+    type: String,
+    required: false
+  },
+  selfieWithIdentityCard:{
+    type: String,
+    required: false
+  },
   activationToken: {
     type: String,
     required: false

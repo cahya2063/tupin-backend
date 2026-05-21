@@ -17,10 +17,17 @@ import { getNearestTechnician } from '../services/ongkir.service.js';
 import warrantyRouter from './warranty.js';
 import reportsRouter from './reports.js';
 import dashboardRouter from './dashboard.js';
+import upload from '../middleware/upload.js';
 const routes = express.Router();
 
 routes.post('/signup', postSignupClient);
-routes.post('/signup-tech', signupTechncianFirstStep);
+
+routes.post('/signup-tech',upload.fields([
+    { name: 'ktp', maxCount: 1 },
+    { name: 'selfie', maxCount: 1 }
+  ]),
+signupTechncianFirstStep);
+
 routes.post('/technician/activate', activateTechnician);
 routes.post('/client/activate', activateClient)
 routes.post('/signin', postLogin)
