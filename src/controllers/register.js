@@ -62,15 +62,18 @@ const postSignupClient = async (req, res) => {// client
 
 const signupTechncianFirstStep = async (req, res, next)=>{ // technician
   try {
-    const validasi = registerValidation(req.body);
-    if (validasi?.status === false) {
-      return res.status(400).json({
-        message: validasi.message,
-      });
-    }
+    const data = req.body
+    // const validasi = registerValidation(req.body);
+    // if (validasi?.status === false) {
+    //   return res.status(400).json({
+    //     message: validasi.message,
+    //   });
+    // }
+    const ktpFile = req.files.ktp?.[0]
+    const selfieFile = req.files.selfie?.[0]
 
     const isRegistered = await userCollection.findOne({
-      email: validasi.data.email,
+      email: data.email,
     });
 
     if (isRegistered) {
@@ -80,13 +83,15 @@ const signupTechncianFirstStep = async (req, res, next)=>{ // technician
     }
 
     const newTechnician = {
-      nama: validasi.data.nama,
-      email: validasi.data.email,
-      phone_number: validasi.data.phone_number,
-      city: validasi.data.city,
+      nama: data.nama,
+      email: data.email,
+      phone_number: data.phone_number,
+      city: data.city,
 
-      skills: validasi.data.skills,
-      description: validasi.data.description,
+      skills: data.skills,
+      description: data.description,
+      identityCard: ktpFile ? ktpFile.filename : undefined,
+      selfieWithIdentityCard: selfieFile ? selfieFile.filename : undefined,
 
       role: 'technician',
       status: 'pending',
