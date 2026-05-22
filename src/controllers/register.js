@@ -90,8 +90,8 @@ const signupTechncianFirstStep = async (req, res, next)=>{ // technician
 
       skills: data.skills,
       description: data.description,
-      identityCard: ktpFile ? ktpFile.filename : undefined,
-      selfieWithIdentityCard: selfieFile ? selfieFile.filename : undefined,
+      identityCard: ktpFile ? `uploads/technician-documents/identity-card/${ktpFile.filename}` : undefined,
+      selfieWithIdentityCard: selfieFile ? `uploads/technician-documents/selfie-with-identity-card/${selfieFile.filename}` : undefined,
 
       role: 'technician',
       status: 'pending',
