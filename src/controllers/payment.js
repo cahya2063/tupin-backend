@@ -193,6 +193,11 @@ const getInvoices = async (req, res, next) => {// client
       data.status = invoice.status
       await data.save()
       // }
+      if(invoice.status == 'EXPIRED'){
+        const job = await jobsCollection.findById(data.jobId)
+        job.status = 'canceled'
+        await job.save()
+      }
       // return invoice
       return {
         id: invoice.id,

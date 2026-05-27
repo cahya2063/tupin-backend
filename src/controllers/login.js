@@ -28,7 +28,7 @@ const postLogin = async(req, res)=>{// all role
 
         if(!isPasswordMatch){
             return res.status(400).json({
-                message: 'password salah'
+                message: 'email atau password salah'
             })
         }
 
