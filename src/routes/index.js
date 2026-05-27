@@ -13,11 +13,12 @@ import reviewRouter from './review.js';
 import paymentRouter from './payment.js';
 import { handleXenditWebhooksInvoices, handleXenditWebhooksPayout } from '../controllers/payment.js';
 import ongkirRouter from './ongkir.js';
-import { getNearestTechnician } from '../services/ongkir.service.js';
+// import { getNearestTechnician } from '../services/ongkir.service.js';
 import warrantyRouter from './warranty.js';
 import reportsRouter from './reports.js';
 import dashboardRouter from './dashboard.js';
 import upload from '../middleware/upload.js';
+import { getNearestTechnician } from '../controllers/jobs.js';
 const routes = express.Router();
 
 routes.post('/signup', postSignupClient);

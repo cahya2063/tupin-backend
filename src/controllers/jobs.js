@@ -11,6 +11,44 @@ import { emitToJobParties } from "../utils/tools.js";
 
 const ObjectId = mongoose.Types.ObjectId
 
+const getNearestTechnician = async(req, res)=>{
+    const {lat, lng} = req.body
+    const technicians = await userCollection.aggregate([
+        {
+            $geoNear: {
+                near:{
+                    type: "Point",
+                    coordinates: [lng, lat]
+                },
+                distanceField: 'distance',
+                spherical: true,
+                distanceMultiplier: 0.001, // rubah dari Km ke Meter
+                query: { 
+                    role: 'technician',
+                    isActive: true
+                },
+                maxDistance: 30000
+            }
+        },
+        {
+            $sort: { distance: 1 }// ascending
+        },
+        {
+            $limit: 10
+        },
+        {
+            $project:{
+                _id: 1,
+                distance: 1
+            }
+        }
+    ])
+    return res.json({
+        success: true,
+        technicians
+    })
+}
+
 const addJob = async (req, res) => { // client
   try {
     if (req.files.length > 10) {
@@ -408,6 +446,7 @@ const deleteReportedJob = async (req, res, next) => {
   }
 }
 export {
+  getNearestTechnician,
   addJob, 
   getAllJob, 
   getDetailJob, 

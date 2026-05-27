@@ -1,7 +1,7 @@
 import express from 'express'
 import { authRole } from '../middleware/auth.js'
 import {  } from '../controllers/ongkir.js'
-import { calculateShippingCost, getDestinationRequest, getNearestTechnician, getPosCode } from '../services/ongkir.service.js'
+import { calculateShippingCost, getDestinationRequest, getPosCode } from '../services/ongkir.service.js'
 
 const ongkirRouter = express.Router()
 ongkirRouter.get('/destination/:postCode', authRole(['client', 'technician']), getDestinationRequest)
