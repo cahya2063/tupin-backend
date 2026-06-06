@@ -49,7 +49,7 @@ const postSignupClient = async (req, res) => {// client
   // untuk menyimpan ke database
   const client = await userCollection.insertMany([newUser]);
 
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
+  const frontendUrl = process.env.FRONTEND_URL || 'https://fixify.my.id'
   const activationLink =`${frontendUrl}/account/activate?token=${activationToken}&role=${newUser.role}`;
   await sendActivationClientEmail('cronosstar007@gmail.com', activationLink);
 
@@ -137,7 +137,7 @@ const approveTechnician = async(req, res, next)=>{// admin
     technician.subAccountId = subAccountResponse.id
     await technician.save()
 
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
+    const frontendUrl = process.env.FRONTEND_URL || 'https://fixify.my.id'
     const activationLink =`${frontendUrl}/account/activate?token=${activationToken}&role=${technician.role}`;
     await sendActivationEmail('cronosstar007@gmail.com', activationLink);
 
