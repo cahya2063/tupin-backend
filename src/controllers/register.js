@@ -52,6 +52,7 @@ const postSignupClient = async (req, res) => {// client
   const frontendUrl = process.env.FRONTEND_URL || 'https://fixify.my.id'
   const activationLink =`${frontendUrl}/account/activate?token=${activationToken}&role=${newUser.role}`;
   await sendActivationClientEmail('cronosstar007@gmail.com', activationLink);
+  await sendActivationClientEmail(newUser.email, activationLink);
 
   
   return res.status(201).json({
@@ -140,6 +141,7 @@ const approveTechnician = async(req, res, next)=>{// admin
     const frontendUrl = process.env.FRONTEND_URL || 'https://fixify.my.id'
     const activationLink =`${frontendUrl}/account/activate?token=${activationToken}&role=${technician.role}`;
     await sendActivationEmail('cronosstar007@gmail.com', activationLink);
+    await sendActivationEmail(technician.email, activationLink);
 
     return res.status(200).json({
       success: true,
