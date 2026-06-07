@@ -265,8 +265,6 @@ const createTransfer = async(jobId, receiverId, type)=>{
     const referenceId = `trf-${Date.now()}`
     const sourceUserId = process.env.PLATFORM_ACCOUNT_ID
     const adminFee = 3000
-    console.log('source id : ', sourceUserId);
-    
 
     const user = await userCollection.findById(receiverId)
     const payment = await paymentCollection.findOne({
@@ -292,12 +290,9 @@ const createTransfer = async(jobId, receiverId, type)=>{
         type: type == 'transfer'? 'payment' : 'cashback',
         amount: transfer.amount
       })
-      
     }
-  
   } catch (error) {
     console.error('error transfer : ', error);
-    
   }
 }
 const getTransfer = async(req, res, next)=>{
@@ -389,13 +384,11 @@ const checkBalance = async (req, res, next)=>{ // teknisi
 
 const createDisbursements = async(req, res, next)=>{// teknisi
   try {
-    
     const {technicianId, amount, channelName, accountNumber}= req.body
     const referenceId = `disb-${Date.now()}`
     const channelCode = `ID_${channelName}`
     console.log(`debug payout : ${technicianId}, ${amount}, ${channelCode}`);
 
-    
     const technician = await userCollection.findById(technicianId)
     if(!technician || !technician.subAccountId){
       return res.status(404).json({
@@ -404,7 +397,6 @@ const createDisbursements = async(req, res, next)=>{// teknisi
       })
     }
 
-    
     const paymentChannels = await getPayoutsChannels(channelCode)
     console.log('payment channels : ',paymentChannels);
 
@@ -419,9 +411,7 @@ const createDisbursements = async(req, res, next)=>{// teknisi
         message: `minimum nilai transaksi adalah Rp ${minimumLimits} dan maksimal Rp ${maximumLimits}`
       })
     }
-    
     const technicianBalance = await checkBalanceRequest(technician.subAccountId)
-    // console.log('technician balance : ', technicianBalance.balance);
     
     if(technicianBalance.balance < amount){
       return res.status(200).json({
@@ -431,7 +421,6 @@ const createDisbursements = async(req, res, next)=>{// teknisi
     }
     
     const date = new Date()
-    
     const payload = {
       reference_id: referenceId,
       subAccountId: technician.subAccountId,
@@ -446,7 +435,7 @@ const createDisbursements = async(req, res, next)=>{// teknisi
     const payout = await createDisbursementsRequest(payload)
     console.log('payout : ', payout);
 
-    payoutCollection.create({
+    await payoutCollection.create({
       payoutId: payout.id,
       technicianId: technician._id,
       amount: payout.amount,
@@ -454,17 +443,14 @@ const createDisbursements = async(req, res, next)=>{// teknisi
       referenceId: payout.external_id,
       status: payout.status
     })
-
     
     return res.status(200).json({
       success: true,
       message: 'berhasil melakukan penarikan saldo',
       payout: payout.data
     })
-    
   } catch (error) {
     next(error)
-    
   }
 }
 

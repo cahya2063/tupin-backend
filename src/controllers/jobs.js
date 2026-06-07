@@ -27,7 +27,7 @@ const getNearestTechnician = async(req, res)=>{
                     role: 'technician',
                     isActive: true
                 },
-                maxDistance: 30000
+                // maxDistance: 30000
             }
         },
         {
@@ -43,6 +43,8 @@ const getNearestTechnician = async(req, res)=>{
             }
         }
     ])
+    console.log('terdekat : ', technicians);
+    
     return res.json({
         success: true,
         technicians

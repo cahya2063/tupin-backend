@@ -9,7 +9,7 @@ const client = axios.create({
     auth: auth,
 })
 
-const createSubAccountRequest = async(body)=>{ // teknisi register
+const createSubAccountRequest = async(body)=>{ // teknisi || pelanggan register
   try {
     
     console.log('body sub accunt : ', body);
