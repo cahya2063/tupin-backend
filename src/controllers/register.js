@@ -39,12 +39,13 @@ const postSignupClient = async (req, res) => {// client
   };
   const subAccount = {
     email : newUser.email,
-    type: 'OWNED',
+    type: 'MANAGED',
     business_name: newUser.nama
   }
 
   const subAccountResponse = await createSubAccountRequest(subAccount)
-  newUser.subAccountId = subAccountResponse.id
+  // newUser.subAccountId = subAccountResponse.id
+  newUser.subAccountId = '6a26da1cc4c047cb532423d9'
 
   // untuk menyimpan ke database
   const client = await userCollection.insertMany([newUser]);
@@ -125,17 +126,17 @@ const approveTechnician = async(req, res, next)=>{// admin
     }
     const subAccount = {
       email : technician.email,
-      type: 'OWNED',
+      type: 'MANAGED',
       business_name: technician.nama
     }
     
     const subAccountResponse = await createSubAccountRequest(subAccount)
     
-  
     technician.status = 'approve'
     technician.activationToken = activationToken
     technician.activationExpired = Date.now() + 1000 * 60 * 60 * 24 * 3 // 3 hari
-    technician.subAccountId = subAccountResponse.id
+    // technician.subAccountId = subAccountResponse.id
+    technician.subAccountId = '6a1e4db74c8402803aee1394'
     await technician.save()
 
     const frontendUrl = process.env.FRONTEND_URL || 'https://fixify.my.id'

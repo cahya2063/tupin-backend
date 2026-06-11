@@ -4,7 +4,7 @@ const payoutSchema = new mongoos.Schema({
         type: String,
         required: true
     },
-    technicianId: {
+    userId: {
         type: String,
         required: true
     },

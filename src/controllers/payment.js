@@ -384,13 +384,13 @@ const checkBalance = async (req, res, next)=>{ // teknisi
 
 const createDisbursements = async(req, res, next)=>{// teknisi
   try {
-    const {technicianId, amount, channelName, accountNumber}= req.body
+    const {userId, amount, channelName, accountNumber}= req.body
     const referenceId = `disb-${Date.now()}`
     const channelCode = `ID_${channelName}`
-    console.log(`debug payout : ${technicianId}, ${amount}, ${channelCode}`);
+    console.log(`debug payout : ${userId}, ${amount}, ${channelCode}`);
 
-    const technician = await userCollection.findById(technicianId)
-    if(!technician || !technician.subAccountId){
+    const user = await userCollection.findById(userId)
+    if(!user || !user.subAccountId){
       return res.status(404).json({
         success: false,
         message: 'Teknisi tidak ditemukan atau belum memiliki sub account'
@@ -411,9 +411,9 @@ const createDisbursements = async(req, res, next)=>{// teknisi
         message: `minimum nilai transaksi adalah Rp ${minimumLimits} dan maksimal Rp ${maximumLimits}`
       })
     }
-    const technicianBalance = await checkBalanceRequest(technician.subAccountId)
+    const userBalance = await checkBalanceRequest(user.subAccountId)
     
-    if(technicianBalance.balance < amount){
+    if(userBalance.balance < amount){
       return res.status(200).json({
         success: false,
         message: 'saldo tidak mencukupi'
@@ -423,10 +423,10 @@ const createDisbursements = async(req, res, next)=>{// teknisi
     const date = new Date()
     const payload = {
       reference_id: referenceId,
-      subAccountId: technician.subAccountId,
+      subAccountId: user.subAccountId,
       external_id: referenceId,
       bank_code: channelName,
-      account_holder_name: technician.nama,
+      account_holder_name: user.nama,
       account_number: accountNumber,
       description: `Payout tgl ${date.toLocaleDateString()}`,
       amount: amount
@@ -437,7 +437,7 @@ const createDisbursements = async(req, res, next)=>{// teknisi
 
     await payoutCollection.create({
       payoutId: payout.id,
-      technicianId: technician._id,
+      userId: user._id,
       amount: payout.amount,
       channelCode: payout.bank_code,
       referenceId: payout.external_id,
@@ -457,7 +457,7 @@ const createDisbursements = async(req, res, next)=>{// teknisi
 const getDisbursements = async(req, res, next)=>{
   try {
     const {technicianId} = req.params
-    const payouts = await payoutCollection.find({technicianId: technicianId})
+    const payouts = await payoutCollection.find({userId: technicianId})
     if(payouts.length == 0){
       return res.status(404).json({
         success: false,
@@ -467,7 +467,7 @@ const getDisbursements = async(req, res, next)=>{
     // console.log('payouts : ', payouts);
     
     const payoutDetails = payouts.map(async (payout) => {
-      const technician = await userCollection.findById(payout.technicianId)
+      const technician = await userCollection.findById(payout.userId)
 
       const latestDisbursements = await getDisbursementsRequest(
         payout.payoutId,
