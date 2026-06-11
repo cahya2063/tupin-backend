@@ -70,10 +70,6 @@ io.on('connection', (socket)=>{
             socket.join(`client:${userId}`)
         }
     });
-
-
-
-    
 })
 
 // Middleware error handler global
