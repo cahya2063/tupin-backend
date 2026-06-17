@@ -45,7 +45,7 @@ const postSignupClient = async (req, res) => {// client
 
   const subAccountResponse = await createSubAccountRequest(subAccount)
   // newUser.subAccountId = subAccountResponse.id
-  newUser.subAccountId = '6a26da1cc4c047cb532423d9'
+  newUser.subAccountId = '6a1e4db74c8402803aee1394'
 
   // untuk menyimpan ke database
   const client = await userCollection.insertMany([newUser]);
