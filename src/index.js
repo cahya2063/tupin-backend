@@ -81,6 +81,9 @@ app.use((err, req, res, next) => {
 })
 
 // setInterval(autoTransfer, 10000);
+const ONE_HOUR = 60 * 60 * 1000; // 3.600.000 ms
+
+setInterval(autoTransfer, ONE_HOUR);
 
 server.listen(port, ()=>{    
     console.log(`Server is running on http://localhost:${port}`);

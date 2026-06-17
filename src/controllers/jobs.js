@@ -43,7 +43,7 @@ const getNearestTechnician = async(req, res)=>{
             }
         }
     ])
-    console.log('terdekat : ', technicians);
+    // console.log('terdekat : ', technicians);
     
     return res.json({
         success: true,
@@ -193,7 +193,7 @@ const getAcceptedJob = async(req, res, next)=>{// teknisi
   }
 }
 
-const checkedJob = async(req, res, next)=>{
+const checkedJob = async(req, res, next)=>{ // pelanggan
   try {
     const {jobId} = req.params
     
