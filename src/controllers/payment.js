@@ -25,73 +25,26 @@ const client = axios.create({
     auth: auth,
 })
 
-// const createTransactionGateway = async (req, res) => { // midtrans, client
-//   try {
+const transferRules = {
+  // tipe transfer
+  transportation: [ 
+    // status job valid untuk transfer
+    'checked',
+    'pending repair payment',
+    'repair paid',
+    'warranty',
+    'completed'
+  ],
+  repair: [
+    'warranty',
+    'completed'
+  ]
+}
 
-//     console.log("SERVER KEY :", process.env.MIDTRANS_SERVER_KEY);
-
-//     // console.log('req body : ', req.body);
-//     const {amount, customer_details} = req.body;
-    
-//     const payload = {
-//       transaction_details: {
-//         order_id: `GATEWAY-${Date.now()}`,
-//         gross_amount: Number(amount),
-//       },
-//       customer_details: {
-//         first_name: customer_details.name,
-//         email: customer_details.email
-//       }
-//     };
-
-//     const transaction = await snap.createTransaction(payload);
-
-//     return res.status(200).json({
-//         token: transaction.token,
-//         redirect_url: transaction.redirect_url,
-//     });
-
-//   } catch (error) {
-//     console.log("MIDTRANS ERROR :", error);
-//     return res.status(500).json({
-//       message: "gagal membuat transaksi",
-//       error: error.message,
-//     });
-//   }
-// };
-
-
-// const createSplitRule = async (subAccountId) => { // teknisi register
-//   try {
-    
-//     const data = {
-//       name: "split rule platform dan teknisi",
-//       description: "pembagian pembayaran antara teknisi dan platform",
-//       routes: [
-//         {
-//           percent_amount: 95,
-//           currency: "IDR",
-//           destination_account_id: subAccountId,
-//           reference_id: "reference-1"
-//         },
-//         {
-//           percent_amount: 5,
-//           currency: "IDR",
-//           destination_account_id: process.env.PLATFORM_ACCOUNT_ID,
-//           reference_id: "reference-2"
-//         }
-//       ]
-//     }
-//     const response = await createSplitRuleRequest(data)
-    
-  
-//     return response;
-//   } catch (error) {
-//     console.log('error : ', error);
-    
-//   }
-// };
-
+// apakah transfer valid berdasarkan status job dan tipe transfer?
+const isValidTransfer = (jobStatus, type) => {
+  return transferRules[type]?.includes(jobStatus)
+}
 
 
 const createInvoice = async (req, res, next) => { // technician
@@ -189,14 +142,20 @@ const getInvoices = async (req, res, next) => {// client
     const payments = invoiceData.map(async (data)=>{      
       const invoice = await getInvoiceRequest(data.invoiceId, data.subAccountId)
 
+      console.log('get invoice : ', invoice);
+      
       // if(data.status == 'PENDING'){
       data.status = invoice.status
       await data.save()
       // }
+      const job = await jobsCollection.findById(data.jobId)
+
       if(invoice.status == 'EXPIRED'){
-        const job = await jobsCollection.findById(data.jobId)
         job.status = 'canceled'
         await job.save()
+      }
+      if(invoice.status == 'SETTLED' && (job.transferStatus.transportation == false || job.transferStatus.repair == false)){
+        await processTransfer(job._id)
       }
       // return invoice
       return {
@@ -260,6 +219,52 @@ const getInvoicesByJobId = async (req, res, next) => {
     next(error)
   }
 }
+
+const processTransfer = async (jobId) => {
+  const job = await jobsCollection.findById(jobId)
+  if (!job) return
+
+  const payments = await paymentCollection.find({ jobId })
+
+  const transportationPayment = payments.find(p => p.type === 'transportation')
+  const repairPayment = payments.find(p => p.type === 'repair')
+
+  // transportation transfer
+
+  if (
+    transportationPayment &&
+    transportationPayment.status === 'SETTLED' &&
+    !job.transferStatus.transportation &&
+    isValidTransfer(job.status, 'transportation')
+  ) {
+    // buat data transfer
+    await createTransfer(
+      job._id,
+      transportationPayment.receiverId,
+      'transportation'
+    )
+
+    job.transferStatus.transportation = true
+    await job.save()
+  }
+
+  // repair transfer
+  if (
+    repairPayment &&
+    repairPayment.status === 'SETTLED' &&
+    !job.transferStatus.repair &&
+    isValidTransfer(job.status, 'repair')
+  ) {
+    await createTransfer(
+      job._id,
+      repairPayment.receiverId,
+      'repair'
+    )
+
+    job.transferStatus.repair = true
+    await job.save()
+  }
+}
 const createTransfer = async(jobId, receiverId, type)=>{
   try {
     const referenceId = `trf-${Date.now()}`
@@ -287,12 +292,35 @@ const createTransfer = async(jobId, receiverId, type)=>{
         status: transfer.status,
         paymentId: payment._id,
         receiverId: receiverId,
-        type: type == 'transfer'? 'payment' : 'cashback',
+        type: payment.type,
         amount: transfer.amount
       })
     }
   } catch (error) {
     console.error('error transfer : ', error);
+  }
+}
+
+const syncInvoices = async () => {
+  const payments = await paymentCollection.find({
+    status: { $in: ['PAID', 'SETTLED'] }
+  });
+
+  for (const payment of payments) {
+
+    const invoice = await getInvoiceRequest(
+      payment.invoiceId
+    );
+
+    if (payment.status !== invoice.status) {
+
+      payment.status = invoice.status;
+      await payment.save();
+
+      if (invoice.status === 'SETTLED') {
+        await processTransfer(payment.jobId);
+      }
+    }
   }
 }
 const getTransfer = async(req, res, next)=>{
@@ -507,24 +535,31 @@ const autoTransfer = async()=>{
     const jobs = await jobsCollection.find({
       status: 'warranty',
       jobDoneDate: { $lte: fourDaysAgo },
-      isTransfered: false
+      'transferStatus.repair': false
     });
     
     
     for (const job of jobs) {
 
       // antisipasi double transfer
-      const locked = await jobsCollection.findOneAndUpdate(
-        { _id: job._id, isTransfered: false },
-        { isTransfered: true, status: 'warranty' },
-        { new: true }
-      );
+      const locked = await jobsCollection.findOneAndUpdate({
+          _id: job._id,
+          'transferStatus.repair': false
+        },
+        {
+          $set: {
+            'transferStatus.repair': true
+          }
+        },
+        {
+          new: true
+        });
 
       if (!locked) continue;
 
       const payment = await paymentCollection.findOne({
         jobId: job._id,
-        status: 'PAID',
+        status: 'SETTLED',
         type: 'repair'
       });
       
@@ -551,6 +586,7 @@ const autoTransfer = async()=>{
       })
 
       job.status = 'completed'
+      job.transferStatus.repair = true
       job.save()
 
       console.log('data payment : ', payment);
@@ -579,6 +615,8 @@ const handleXenditWebhooksInvoices = async (req, res) => {// xendit execution
     payment.status = event.status
     await payment.save()
 
+    await processTransfer(payment.jobId)
+
     const job = await jobsCollection.findById(payment.jobId)
 
     if(event.status == 'PAID' && payment.type === 'transportation' && job.status == 'pending transport fee'){
@@ -604,8 +642,6 @@ const handleXenditWebhooksInvoices = async (req, res) => {// xendit execution
 };
 
 
-
-
 const handleXenditWebhooksPayout = async (req, res)=>{
   try {
     console.log('event : ', req.body);
@@ -629,6 +665,8 @@ export {
     createDisbursements,
     getDisbursements,
     getInvoices,
+    processTransfer,
+    syncInvoices,
     getInvoicesByJobId,
     createTransfer,
     getTransfer,

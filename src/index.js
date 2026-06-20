@@ -6,7 +6,7 @@ import routes from './routes/index.js';
 import cors from 'cors'
 import http from 'http'
 import { Server } from 'socket.io';
-import { autoTransfer } from './controllers/payment.js';
+import { autoTransfer, syncInvoices } from './controllers/payment.js';
 
 
 const app = express()
@@ -84,6 +84,7 @@ app.use((err, req, res, next) => {
 const ONE_HOUR = 60 * 60 * 1000; // 3.600.000 ms
 
 setInterval(autoTransfer, ONE_HOUR);
+setInterval(syncInvoices, ONE_HOUR)
 
 server.listen(port, ()=>{    
     console.log(`Server is running on http://localhost:${port}`);

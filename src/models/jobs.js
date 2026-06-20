@@ -51,9 +51,15 @@ const jobsSchema = new mongoos.Schema({
         type: String,
         required: true
     },
-    isTransfered: {
-        type: Boolean,
-        default: false
+    transferStatus: {
+        transportation: {
+            type: Boolean,
+            default: false
+        },
+        repair: {
+            type: Boolean,
+            default: false
+        }
     },
     jobCancel: {
         cancelBy: {

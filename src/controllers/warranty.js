@@ -155,7 +155,7 @@ const doneWarranty = async(req, res, next)=>{
     job.status = 'completed'
     job.jobDoneDate = Date.now()
     job.save()
-    await createTransfer(job._id, job.selectedTechnician, 'transfer')
+    await processTransfer(job._id)
     emitToJobParties('job:completed', job, {
         jobId: job._id,
         status: job.status
