@@ -4,7 +4,7 @@ import userCollection from "../models/users.js"
 import { createNotification } from "./notification.js";
 import axios from "axios";
 import paymentCollection from "../models/payment.js";
-import { createTransfer } from "./payment.js";
+import { createTransfer, processTransfer } from "./payment.js";
 import { io } from "../index.js";
 import { emitToJobParties } from "../utils/tools.js";
 
@@ -20,9 +20,9 @@ const getNearestTechnician = async(req, res)=>{
                     type: "Point",
                     coordinates: [lng, lat]
                 },
-                distanceField: 'distance',
+                distanceField: 'distance', // nama field jarak
                 spherical: true,
-                distanceMultiplier: 0.001, // rubah dari Km ke Meter
+                distanceMultiplier: 0.001, // rubah dari Km ke Meter 1 = 5200 m / 0.001 = 5.2 km
                 query: { 
                     role: 'technician',
                     isActive: true
@@ -37,13 +37,12 @@ const getNearestTechnician = async(req, res)=>{
             $limit: 10
         },
         {
-            $project:{
+            $project:{ // field yang ingin ditampilkan
                 _id: 1,
                 distance: 1
             }
         }
     ])
-    // console.log('terdekat : ', technicians);
     
     return res.json({
         success: true,
@@ -201,6 +200,12 @@ const checkedJob = async(req, res, next)=>{ // pelanggan
       _id: jobId,
       status: 'transport fee paid'
     })
+    if(!job){
+      return res.status(404).json({
+        message: 'Job tidak ditemukan'
+      })
+    }
+
     const payment = await paymentCollection.findOne({
       jobId: job._id,
       type: 'transportation',
@@ -211,16 +216,13 @@ const checkedJob = async(req, res, next)=>{ // pelanggan
         message: 'transport fee belum dibayar'
       })
     }
-    if(!job){
-      return res.status(404).json({
-        message: 'Job tidak ditemukan'
-      })
-    }
+  
 
-    await createTransfer(job._id, job.selectedTechnician, 'transportation')
     
     job.status = 'checked'
     await job.save()
+    
+    await processTransfer(job._id)
 
     emitToJobParties('job:checked', job, {
       jobId: job._id,
@@ -316,9 +318,6 @@ const cancelJobs = async (req, res, next)=>{// teknisi
       })
     }
     
-    if (job.status === 'transport fee paid') {
-      await createTransfer(job._id, job.selectedTechnician, 'transportation')
-    }
     job.status = 'canceled'
     job.jobCancel = {
       cancelBy: req.user.id,
