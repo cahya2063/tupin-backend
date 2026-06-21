@@ -3,7 +3,7 @@ import userCollection from "../models/users.js";
 import warrantyCollection from "../models/warranty.js";
 import { emitToJobParties } from "../utils/tools.js";
 import { createNotification } from "./notification.js";
-import { createTransfer } from "./payment.js";
+import { createTransfer, processTransfer } from "./payment.js";
 
 
 const createWarranty = async(req, res, next)=>{
