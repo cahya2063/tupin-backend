@@ -209,15 +209,13 @@ const checkedJob = async(req, res, next)=>{ // pelanggan
     const payment = await paymentCollection.findOne({
       jobId: job._id,
       type: 'transportation',
-      status: 'PAID'
+      status: { $in: ['PAID', 'SETTLED'] }
     })
     if(!payment){
       return res.status(400).json({
         message: 'transport fee belum dibayar'
       })
     }
-  
-
     
     job.status = 'checked'
     await job.save()
