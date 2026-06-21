@@ -36,7 +36,6 @@ const transferRules = {
     'completed'
   ],
   repair: [
-    'warranty',
     'completed'
   ]
 }
