@@ -71,8 +71,6 @@ const addJob = async (req, res) => { // client
         idCreator: data.userId,
       };
      
-      
-  
       const result = await jobsCollection.create(newJob);
 
       // kirim event ke teknisi tertentu
