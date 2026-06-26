@@ -5,13 +5,17 @@ const notificationSchema = new mongoos.Schema({
     type: String,
     required: true 
   }, // penerima notifikasi (technician)
-  jobId: {
+  // jobId: {
+  //   type: String,
+  //   required: true
+  // },
+  category: {
     type: String,
-    required: true
+    required: false
   },
   message: {
     type: String,
-    required: true
+    required: false
   },
   isRead: {
     type: Boolean,
