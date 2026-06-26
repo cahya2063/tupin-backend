@@ -9,6 +9,10 @@ const messageSchema = new mongoos.Schema({
         type: String,
         required: true
     },
+    receiverId: {
+        type: String,
+        required: true
+    },
     messageType: {
         type: String,
         enum: ['message', 'location', 'image'],

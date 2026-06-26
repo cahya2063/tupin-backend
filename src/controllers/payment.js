@@ -35,7 +35,7 @@ const client = axios.create({
 });
 
 const transferRules = {
-  // tipe transfer
+  // tipe transfer transportasi
   transportation: [
     // status job valid untuk transfer
     'checked',
@@ -292,7 +292,7 @@ const createTransfer = async (jobId, receiverId, type) => {
     const user = await userCollection.findById(receiverId);
     const payment = await paymentCollection.findOne({
       jobId: jobId,
-      type: type == 'transfer' ? 'repair' : 'transportation',
+      type: type == 'repair' ? 'repair' : 'transportation',
       status: { $in: ['PAID', 'SETTLED'] },
     });
 

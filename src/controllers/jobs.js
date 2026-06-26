@@ -80,7 +80,8 @@ const addJob = async (req, res) => { // client
       const client = await userCollection.findById(data.userId);
       const technician = await userCollection.findById(data.selectedTechnician)
       const job = result;
-      createNotification(job.idCreator, job.id, `berhasil mengunggah job baru dengan judul ${job.title}` )
+      createNotification(job.idCreator, job.id, `berhasil mengunggah job baru dengan judul ${job.title}`, 'job_created')
+      createNotification(job.selectedTechnician, job.id, `ada job masuk nihh ${job.title}`, 'job_received')
   
       await axios.post(
         "https://api.fonnte.com/send",

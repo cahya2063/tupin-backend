@@ -2,7 +2,7 @@ import notificationCollection from "../models/notification.js"
 import nodemailer from 'nodemailer'
 
 const getNotificationsByUser = async(req, res, next)=>{// client, teknisi
-    try {
+    try {        
         const {userId} = req.params
         const notifications = await notificationCollection.find({userId: userId})
 
@@ -19,14 +19,14 @@ const getNotificationsByUser = async(req, res, next)=>{// client, teknisi
         next(error)
     }
 }
-const createNotification = async(userId, jobId, message)=>{// siapapun yang memanggil
+const createNotification = async(userId, jobId, message, category)=>{// siapapun yang memanggil
    await notificationCollection.create({
         userId,
         jobId,
-        message
+        message,
+        category
     })
 }
-
 const readNotification = async(req, res, next)=>{// client, teknisi
     try {
         const {notificationId} = req.params
@@ -44,6 +44,53 @@ const readNotification = async(req, res, next)=>{// client, teknisi
         next(error)
     }
 }
+
+// const createJobNotification = async({userId = '', category = ''})=>{
+//     await notificationCollection.create({
+//         userId,
+//         category,
+//     })
+// }
+
+const countJobNotification = async(req, res, next)=>{// teknisi
+    const {userId} = req.params
+    
+    const count = await notificationCollection.countDocuments({
+        userId: userId,
+        isRead: false,
+        category: 'job_received'
+    })
+
+    if(count === 0){
+        return res.status(404).json({
+            message: 'belum ada notifikasi'
+        })
+    }
+    return res.status(200).json({
+        message: 'berhasil menghitung notifikasi',
+        count: count
+    })
+}
+
+const readCountJobNotification = async(req, res, next)=>{// teknisi
+    console.log('userId : ', req.params.id);
+    
+    const notifications = await notificationCollection.find({
+        userId: req.user.id,
+        isRead: false,
+        category: 'job_received'
+    })
+    
+    notifications.forEach(async(notification)=>{
+        notification.isRead = true
+        await notification.save()
+    })
+    return res.status(200).json({
+        message: 'berhasil membaca notifikasi',
+    })
+}
+
+
 
 const deleteNotification = async(req, res, next)=>{// client, teknisi
     try {
@@ -331,6 +378,9 @@ async function sendActivationClientEmail(destinationEmail, activationLink) {// t
 export {
     getNotificationsByUser, 
     createNotification, 
+    countJobNotification,
+    readCountJobNotification,
+    // createJobNotification,
     readNotification, 
     deleteNotification, 
     sendEmailRegistrationFirstStep,
