@@ -30,8 +30,8 @@ const jobsSchema = new mongoos.Schema({
         type: Object,
         required: true
     },
-    destination: {
-        type: Object,
+    size: {
+        type: String,
         required: true
     },
     selectedTechnician: {

@@ -1,6 +1,7 @@
 import axios from "axios"
 import userCollection from "../models/users.js"
 import jobsCollection from "../models/jobs.js"
+import mongoose from "mongoose"
 const destination = axios.create({
     headers:{
         'Key': process.env.DESTINATION_API_KEY
@@ -56,6 +57,60 @@ const calculateShippingCost = async(req, res, next)=>{
         next(error)
     }
 }
+
+const calculateDistance = async(technicianId, lat, lng) =>{
+    const result = await userCollection.aggregate([
+        {
+            $geoNear:{
+                near: {
+                    type: 'Point',
+                    coordinates: [lng, lat]
+                },
+                distanceField: 'distance',
+                spherical: true,
+                query: {
+                    _id: new mongoose.Types.ObjectId(technicianId)
+                }
+            }
+            
+        }
+    ])
+
+    
+    return result[0].distance / 1000
+}
+
+const calculatePickupFee = async(req, res, next)=>{
+    const baseFee = 5000
+    const pricePerKm = 3000
+    const {
+        lat,
+        lng,
+        size,
+        technicianId,
+    } = req.body
+
+    const sizeMultiplier = {
+        kecil: 1,
+        sedang: 1.3,
+        besar: 1.5,
+        sangat_besar: 2.2
+    }
+    const distance = await calculateDistance(req.body.technicianId, lat, lng)
+
+    console.log('distance : ', distance);
+    
+    const multiplier = sizeMultiplier[size] || 1
+    const pickupFee = Math.round(baseFee + (distance * pricePerKm * multiplier))
+    const shippingCost = Math.round(pickupFee / 1000) * 1000
+    console.log('shipping fee : ', shippingCost);
+    
+    return res.json({
+        success: true,
+        shippingCost: shippingCost,
+        distance: distance
+    })
+}
 const getPosCode = async(req, res, next)=>{
     try {
         const {lat, lon} = req.body
@@ -97,5 +152,6 @@ export{
     // getCityRequest,
     getDestinationRequest,
     calculateShippingCost,
+    calculatePickupFee,
     getPosCode
 }
