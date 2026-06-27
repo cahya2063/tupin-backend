@@ -27,7 +27,7 @@ const getNearestTechnician = async(req, res)=>{
                     role: 'technician',
                     isActive: true
                 },
-                // maxDistance: 30000
+                maxDistance: 7000
             }
         },
         {
@@ -64,10 +64,10 @@ const addJob = async (req, res) => { // client
         category: data.category,
         deadline: JSON.parse(data.deadline || "{}"), // kalau deadline dikirim json
         description: data.description,
+        size: data.size,
         photos: req.files ? req.files.map(file => file.filename) : [], // ambil nama file
         location: JSON.parse(data.location || "{}"),
         selectedTechnician: data.selectedTechnician,
-        destination: JSON.parse(data.destination || "{}"),
         idCreator: data.userId,
       };
      
