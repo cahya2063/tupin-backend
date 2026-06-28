@@ -2,8 +2,10 @@ import userCollection from '../models/users.js';
 import { createSubAccountRequest } from '../services/xendit.service.js';
 import { encrypt } from '../utils/bcrypt.js';
 import registerValidation from '../validation/register.js';
-import { sendActivationClientEmail, sendActivationEmail, sendEmailRegistrationFirstStep, sendRejectTechnicianEmail } from './notification.js';
+import { sendActivationClientEmail, sendActivationEmail, sendEmailRegistrationFirstStep, sendRejectTechnicianEmail, sendResetPasswordEmail } from './notification.js';
 import crypto from 'crypto'
+import jwt from 'jsonwebtoken'
+
 // import { createSplitRule } from './payment.js';
 
 const postSignupClient = async (req, res) => {// client
@@ -39,13 +41,13 @@ const postSignupClient = async (req, res) => {// client
   };
   const subAccount = {
     email : newUser.email,
-    type: 'MANAGED',
+    type: 'OWNED',
     business_name: newUser.nama
   }
 
   const subAccountResponse = await createSubAccountRequest(subAccount)
-  // newUser.subAccountId = subAccountResponse.id
-  newUser.subAccountId = '6a1e4db74c8402803aee1394'
+  newUser.subAccountId = subAccountResponse.id
+  // newUser.subAccountId = '6a1e4db74c8402803aee1394'
 
   // untuk menyimpan ke database
   const client = await userCollection.insertMany([newUser]);
@@ -73,6 +75,7 @@ const signupTechncianFirstStep = async (req, res, next)=>{ // technician
     // }
     const ktpFile = req.files.ktp?.[0]
     const selfieFile = req.files.selfie?.[0]
+    const cv = req.files.cv?.[0]
 
     const isRegistered = await userCollection.findOne({
       email: data.email,
@@ -94,6 +97,7 @@ const signupTechncianFirstStep = async (req, res, next)=>{ // technician
       description: data.description,
       identityCard: ktpFile ? `uploads/technician-documents/identity-card/${ktpFile.filename}` : undefined,
       selfieWithIdentityCard: selfieFile ? `uploads/technician-documents/selfie-with-identity-card/${selfieFile.filename}` : undefined,
+      cv: cv ? `uploads/technician-documents/cv/${cv.filename}` : undefined,
 
       role: 'technician',
       status: 'pending',
@@ -126,7 +130,7 @@ const approveTechnician = async(req, res, next)=>{// admin
     }
     const subAccount = {
       email : technician.email,
-      type: 'MANAGED',
+      type: 'OWNED',
       business_name: technician.nama
     }
     
@@ -135,8 +139,8 @@ const approveTechnician = async(req, res, next)=>{// admin
     technician.status = 'approve'
     technician.activationToken = activationToken
     technician.activationExpired = Date.now() + 1000 * 60 * 60 * 24 * 3 // 3 hari
-    // technician.subAccountId = subAccountResponse.id
-    technician.subAccountId = '6a1e4db74c8402803aee1394'
+    technician.subAccountId = subAccountResponse.id
+    // technician.subAccountId = '6a1e4db74c8402803aee1394'
     await technician.save()
 
     const frontendUrl = process.env.FRONTEND_URL || 'https://fixify.my.id'
@@ -216,8 +220,21 @@ const activateTechnician = async (req, res, next) => {// technician
 
     await technician.save()
 
+    const jwtToken = jwt.sign(
+      { 
+        id: technician._id, 
+        email: technician.email,
+        role: technician.role 
+      },
+      process.env.JWT_SECRET, 
+      { expiresIn: '2h' }
+    )
+
     return res.status(200).json({
-      message: 'Password teknisi berhasil dibuat'
+      message: 'Password teknisi berhasil dibuat',
+      token: jwtToken,
+      role: technician.role,
+      id: technician.id
     })
   } catch (error) {
     next(error)
@@ -260,12 +277,91 @@ const activateClient = async (req, res, next) => {// client
 
     await client.save()
 
+    const jwtToken = jwt.sign(
+      { 
+        id: client._id, 
+        email: client.email,
+        role: client.role 
+      },
+      process.env.JWT_SECRET, 
+      { expiresIn: '2h' }
+    )
+
     return res.status(200).json({
-      message: 'Password berhasil dibuat'
+      message: 'Password teknisi berhasil dibuat',
+      token: jwtToken,
+      role: client.role,
+      id: client.id
     })
   } catch (error) {
     next(error)
   }
+}
+
+const forgetPassword = async(req, res, next)=>{
+  try {
+    const {email} = req.body
+    const user = await userCollection.findOne({email: email})
+    if (!user) {
+      return res.json({
+          success: true,
+          message: "Jika email terdaftar, kami akan mengirimkan tautan reset password."
+      });
+    }
+
+    const token = crypto.randomBytes(32).toString('hex')
+    user.resetPasswordToken = token
+    user.resetPasswordExpired = Date.now() + 1000 * 60 * 30; // 30 menit
+
+    await user.save()
+
+    const frontendUrl = process.env.FRONTEND_URL;
+
+    const resetLink = `${frontendUrl}/reset-password?token=${token}`;
+    await sendResetPasswordEmail('cronosstar007@gmail.com', resetLink);
+
+    return res.json({
+        success: true,
+        message: "Link reset password telah dikirim."
+    });
+  } catch (error) {
+    next(error)
+  }
+}
+
+const resetPassword = async (req, res, next) => {
+
+  try {
+
+      const { token, password } = req.body;
+
+      const user = await userCollection.findOne({
+          resetPasswordToken: token,
+          resetPasswordExpired: { $gt: Date.now() }
+      });
+
+      if (!user) {
+          return res.status(400).json({
+              message: "Token tidak valid atau sudah kedaluwarsa."
+          });
+      }
+
+      user.password = await encrypt(password);
+
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpired = undefined;
+
+      await user.save();
+
+      return res.json({
+          success: true,
+          message: "Password berhasil diubah."
+      });
+
+  } catch (error) {
+      next(error);
+  }
+
 }
 
 export { 
@@ -274,5 +370,7 @@ export {
   approveTechnician, 
   activateTechnician, 
   activateClient,
-  rejectTechnician 
+  rejectTechnician,
+  forgetPassword,
+  resetPassword
 };

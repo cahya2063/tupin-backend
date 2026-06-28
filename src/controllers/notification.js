@@ -375,6 +375,108 @@ async function sendActivationClientEmail(destinationEmail, activationLink) {// t
     }
 }
 
+async function sendResetPasswordEmail(destinationEmail, resetLink) {
+    try {
+        const transport = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: 'fixifymultiservis@gmail.com',
+                pass: 'nrhougusoqlzgxhp'
+            }
+        });
+
+        await transport.sendMail({
+            from: '"Fixify Multi Servis" <fixifymultiservis@gmail.com>',
+            to: destinationEmail,
+            subject: 'Reset Password Akun 🔑',
+            html: `
+                <div style="font-family: Arial, sans-serif; background:#f4f4f4; padding:20px;">
+                    <div style="max-width:600px; margin:auto; background:white; padding:30px; border-radius:12px;">
+
+                        <h2 style="color:#2563eb; text-align:center;">
+                            🔑 Permintaan Reset Password
+                        </h2>
+
+                        <p style="font-size:16px; color:#333;">
+                            Halo 👋,
+                        </p>
+
+                        <p style="font-size:15px; color:#555; line-height:1.6;">
+                            Kami menerima permintaan untuk mengatur ulang password akun
+                            <b>Fixify Multi Servis</b>.
+                        </p>
+
+                        <p style="font-size:15px; color:#555; line-height:1.6;">
+                            Klik tombol di bawah ini untuk membuat password baru.
+                            Jika kamu tidak pernah meminta reset password, abaikan email ini.
+                        </p>
+
+                        <div style="text-align:center; margin:35px 0;">
+                            <a
+                                href="${resetLink}"
+                                style="
+                                    background:#2563eb;
+                                    color:white;
+                                    padding:14px 24px;
+                                    text-decoration:none;
+                                    border-radius:8px;
+                                    font-size:15px;
+                                    font-weight:bold;
+                                    display:inline-block;
+                                "
+                            >
+                                Reset Password
+                            </a>
+                        </div>
+
+                        <p style="font-size:14px; color:#666;">
+                            Atau buka tautan berikut melalui browser:
+                        </p>
+
+                        <p style="
+                            word-break:break-all;
+                            font-size:13px;
+                            color:#2563eb;
+                        ">
+                            ${resetLink}
+                        </p>
+
+                        <div style="
+                            background:#fff7ed;
+                            border-left:4px solid #f59e0b;
+                            padding:12px;
+                            border-radius:6px;
+                            margin-top:20px;
+                        ">
+                            <p style="margin:0; font-size:14px; color:#92400e;">
+                                ⚠️ Demi keamanan akun, tautan reset password ini hanya berlaku selama <b>30 menit</b>.
+                            </p>
+                        </div>
+
+                        <hr style="margin:30px 0;" />
+
+                        <p style="font-size:13px; color:#666; line-height:1.6;">
+                            Jika kamu tidak merasa melakukan permintaan ini, tidak perlu melakukan tindakan apa pun.
+                            Password akunmu tidak akan berubah sampai kamu membuat password baru melalui tautan di atas.
+                        </p>
+
+                        <p style="font-size:12px; color:#999; text-align:center; margin-top:30px;">
+                            Email ini dikirim secara otomatis oleh <b>Fixify Multi Servis</b>.<br>
+                            Mohon tidak membalas email ini.
+                        </p>
+
+                    </div>
+                </div>
+            `
+        });
+
+        console.log('Email reset password berhasil dikirim');
+
+    } catch (error) {
+        console.error(error);
+    }
+}
+
 export {
     getNotificationsByUser, 
     createNotification, 
@@ -386,5 +488,6 @@ export {
     sendEmailRegistrationFirstStep,
     sendActivationEmail,
     sendActivationClientEmail,
-    sendRejectTechnicianEmail
+    sendRejectTechnicianEmail,
+    sendResetPasswordEmail
 }
