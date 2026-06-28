@@ -7,6 +7,6 @@ const messageRouter = express.Router()
 
 messageRouter.post('/send',authRole(['technician', 'client']), upload.array('images', 10), createMessage)
 messageRouter.get('/read/:chatId',authRole(['technician', 'client']), getMessageByChatId)
-messageRouter.get('/count-message', authRole(['technician', 'client']), getCountMessage)
+messageRouter.get('/count-message', authRole(['technician', 'client', 'admin']), getCountMessage)
 
 export default messageRouter

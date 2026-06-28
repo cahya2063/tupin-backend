@@ -1,5 +1,5 @@
 import express from 'express';
-import { activateClient, activateTechnician, postSignupClient, signupTechncianFirstStep } from '../controllers/register.js';
+import { activateClient, activateTechnician, forgetPassword, postSignupClient, resetPassword, signupTechncianFirstStep } from '../controllers/register.js';
 import mongoos from '../utils/db.js';
 import {authMiddleware} from '../middleware/auth.js';
 import { postLogin } from '../controllers/login.js';
@@ -25,9 +25,13 @@ routes.post('/signup', postSignupClient);
 
 routes.post('/signup-tech',upload.fields([
     { name: 'ktp', maxCount: 1 },
-    { name: 'selfie', maxCount: 1 }
+    { name: 'selfie', maxCount: 1 },
+    { name: 'cv', maxCount: 1 }
   ]),
 signupTechncianFirstStep);
+
+routes.post('/forget-password', forgetPassword)
+routes.post('/reset-password', resetPassword)
 
 routes.post('/technician/activate', activateTechnician);
 routes.post('/client/activate', activateClient)

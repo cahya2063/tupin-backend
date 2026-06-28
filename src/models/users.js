@@ -92,11 +92,23 @@ const logInSchema = new mongoos.Schema({
     type: String,
     required: false
   },
+  cv: {
+    type: String,
+    required: false
+  },
   activationToken: {
     type: String,
     required: false
   },
   activationExpired: {
+    type: Date,
+    required: false
+  },
+  resetPasswordToken: {
+    type: String,
+    required: false
+  },
+  resetPasswordExpired: {
     type: Date,
     required: false
   },

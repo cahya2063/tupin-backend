@@ -27,7 +27,7 @@ const getNearestTechnician = async(req, res)=>{
                     role: 'technician',
                     isActive: true
                 },
-                maxDistance: 7000
+                // maxDistance: 7000
             }
         },
         {

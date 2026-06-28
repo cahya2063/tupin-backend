@@ -252,7 +252,7 @@ const processTransfer = async (jobId) => {
 
   if (
     transportationPayment &&
-    transportationPayment.status === 'SETTLED' &&
+    transportationPayment.status === 'PAID' &&
     !job.transferStatus.transportation &&
     isValidTransfer(job.status, 'transportation')
   ) {
@@ -273,7 +273,7 @@ const processTransfer = async (jobId) => {
   // repair transfer
   if (
     repairPayment &&
-    repairPayment.status === 'SETTLED' &&
+    repairPayment.status === 'PAID' &&
     !job.transferStatus.repair &&
     isValidTransfer(job.status, 'repair')
   ) {
@@ -287,7 +287,7 @@ const createTransfer = async (jobId, receiverId, type) => {
   try {
     const referenceId = `trf-${Date.now()}`;
     const sourceUserId = process.env.PLATFORM_ACCOUNT_ID;
-    const adminFee = 500;
+    const adminFee = 10000;
 
     const user = await userCollection.findById(receiverId);
     const payment = await paymentCollection.findOne({
@@ -296,12 +296,10 @@ const createTransfer = async (jobId, receiverId, type) => {
       status: { $in: ['PAID', 'SETTLED'] },
     });
 
+    const invoice = await getInvoiceRequest(payment.invoiceId);
     const payload = {
       reference: referenceId,
-      amount:
-        payment.type == 'repair'
-          ? (payment.amount - adminFee) * 0.5
-          : payment.amount * 0.5,
+      amount: invoice.amount - adminFee,
 
       source_user_id: sourceUserId,
       destination_user_id: user.subAccountId,

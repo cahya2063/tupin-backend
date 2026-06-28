@@ -17,6 +17,8 @@ const storage = multer.diskStorage({
       cb(null, 'uploads/technician-documents/identity-card')
     }else if(file.fieldname == 'selfie'){
       cb(null, 'uploads/technician-documents/selfie-with-identity-card')
+    }else if(file.fieldname == 'cv'){
+      cb(null, 'uploads/technician-documents/cv')
     }
     else {
       cb(null, "uploads/others");
