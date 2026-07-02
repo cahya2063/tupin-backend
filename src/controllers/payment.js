@@ -11,6 +11,7 @@ import {
   getTransferRequest,
   createDisbursementsRequest,
   getDisbursementsRequest,
+  bankNameValidationNameRequest,
 } from '../services/xendit.service.js';
 import userCollection from '../models/users.js';
 import payoutCollection from '../models/payout.js';
@@ -424,7 +425,7 @@ const checkBalance = async (req, res, next) => {
 const createDisbursements = async (req, res, next) => {
   // teknisi
   try {
-    const { userId, amount, channelName, accountNumber } = req.body;
+    const { userId, amount, channelName, accountNumber, accountName } = req.body;
     const referenceId = `disb-${Date.now()}`;
     const channelCode = `ID_${channelName}`;
     console.log(`debug payout : ${userId}, ${amount}, ${channelCode}`);
@@ -434,6 +435,21 @@ const createDisbursements = async (req, res, next) => {
       return res.status(404).json({
         success: false,
         message: 'Teknisi tidak ditemukan atau belum memiliki sub account',
+      });
+    }
+
+    const payloadBankValidation = {
+      bank_code: channelName,
+      account_number: accountNumber,
+      account_name: accountName,
+    }
+    const bankValidation = await bankNameValidationNameRequest(payloadBankValidation)
+    console.log('bank validation : ', bankValidation);
+    
+    if(bankValidation.data.isValid != true && bankValidation.data.name == null){
+      return res.status(400).json({
+        success: false,
+        message: 'Data rekening tidak valid',
       });
     }
 
