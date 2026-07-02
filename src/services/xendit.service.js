@@ -52,6 +52,24 @@ const getInvoiceRequest = async (invoiceId) => {
   return response.data
 }
 
+const bankNameValidationNameRequest = async(body)=>{
+  try {
+    const response = await fetch(
+      `https://use.api.co.id/validation/bank?bank_code=${body.bank_code}&account_number=${body.account_number}&account_name=${body.account_name}`,
+      {
+        headers: {
+          'x-api-co-id': process.env.API_CO_ID,
+        }
+      }
+    );
+    const data = await response.json()    
+    return data
+  } catch (error) {
+    console.log('error : ', error.message);
+    
+  }
+}
+
 const createTransferRequest = async(body)=>{
   try {
     const response = await client.post(`transfers`, body)
@@ -184,6 +202,7 @@ export {
     createTransferRequest,
     getTransferRequest,
     createDisbursementsRequest,
+    bankNameValidationNameRequest,
     getDisbursementsRequest,
     createInvoicesRequest,
     getInvoiceRequest
